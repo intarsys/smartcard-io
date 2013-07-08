@@ -29,16 +29,21 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
-public class PCSCLibLazy extends CommonPCSCLib {
+/**
+ * The default {@link INativePCSCLib} implementation.
+ * 
+ */
+public class NativePCSCLib extends CommonPCSCLib {
 
-	public PCSCLibLazy() {
+	public NativePCSCLib() {
 	}
 
 	@Override
 	public IPCSCContext establishContext() throws PCSCException {
-		PCSCContextLazy result = new PCSCContextLazy(this, getPcsc());
-		// result.acquire();
-		// result.release();
+		PCSCContext result = new PCSCContext(this, getPcsc());
+		result.setUseBlockingGetStatusChange(isUseBlockingGetStatusChange());
+		result.acquire();
 		return result;
 	}
+
 }

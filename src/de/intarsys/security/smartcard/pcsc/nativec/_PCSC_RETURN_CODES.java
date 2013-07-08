@@ -29,7 +29,12 @@
  */
 package de.intarsys.security.smartcard.pcsc.nativec;
 
+/**
+ * Common PC/SC return and error codes.
+ * 
+ */
 public interface _PCSC_RETURN_CODES {
+
 	/* Time out happened from the semaphore api functions. */
 	public static final int ERROR_SEM_TIMEOUT = 121;
 

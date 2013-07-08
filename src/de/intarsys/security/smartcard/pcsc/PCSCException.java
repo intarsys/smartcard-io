@@ -30,14 +30,17 @@
 package de.intarsys.security.smartcard.pcsc;
 
 import java.lang.reflect.Field;
+import java.util.logging.Level;
 
 import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 import de.intarsys.tools.message.MessageBundle;
 
+/**
+ * An exceptional condition in the PC/SC handling
+ * 
+ */
 public class PCSCException extends Exception implements _PCSC_RETURN_CODES {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
 	public final static MessageBundle Msg = PACKAGE.Messages;
@@ -88,5 +91,18 @@ public class PCSCException extends Exception implements _PCSC_RETURN_CODES {
 			}
 		}
 		return Msg.getString("PCSCException.error.default", errorCode); //$NON-NLS-1$
+	}
+
+	public static void checkReturnCode(int rc) throws PCSCException {
+		if (rc == SCARD_S_SUCCESS) {
+			return;
+		}
+		if (rc == _PCSC_RETURN_CODES.SCARD_W_RESET_CARD) {
+			if (PCSCTools.Log.isLoggable(Level.FINEST)) {
+				PCSCTools.Log.info("card was reset"); //$NON-NLS-1$ 
+			}
+			throw new PCSCReset();
+		}
+		throw new PCSCException(rc);
 	}
 }

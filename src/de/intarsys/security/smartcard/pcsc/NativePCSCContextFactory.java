@@ -37,22 +37,26 @@ import java.util.logging.Logger;
 import de.intarsys.security.smartcard.pcsc.nativec._PCSC;
 import de.intarsys.tools.system.SystemTools;
 
-public class NativePCSCSystem implements IPCSCContextFactory {
+/**
+ * An {@link IPCSCContextFactory} wrapping native libraries.
+ * 
+ */
+public class NativePCSCContextFactory implements IPCSCContextFactory {
 
 	private static Logger Log = PACKAGE.Log;
 
-	final private static NativePCSCSystem ACTIVE = new NativePCSCSystem();
+	final private static NativePCSCContextFactory ACTIVE = new NativePCSCContextFactory();
 
 	public static final String SYSTEM_DEFAULT_LIBRARY = _PCSC.SYSTEM_DEFAULT_LIBRARY;
 
-	static public NativePCSCSystem get() {
+	static public NativePCSCContextFactory get() {
 		return ACTIVE;
 	}
 
-	private List<IPCSCLib> pcsclibs;
+	final private List<INativePCSCLib> libraries;
 
-	private NativePCSCSystem() {
-		pcsclibs = new ArrayList<IPCSCLib>(2);
+	private NativePCSCContextFactory() {
+		libraries = new ArrayList<INativePCSCLib>(2);
 	}
 
 	@Override
@@ -60,18 +64,18 @@ public class NativePCSCSystem implements IPCSCContextFactory {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " establish context"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
-		if (pcsclibs.isEmpty()) {
+		if (libraries.isEmpty()) {
 			Log.log(Level.INFO, "loading system default library"); //$NON-NLS-1$
-			IPCSCLib lib = new PCSCLibStandard();
+			NativePCSCLib lib = new NativePCSCLib();
 			lib.setPath(SYSTEM_DEFAULT_LIBRARY);
 			lib.setUseExecutorThread(false);
 			lib.setUseBlockingGetStatusChange(SystemTools.isWindows());
-			registerLibrary(lib);
+			lib.initialize();
 		}
 		List<IPCSCContext> contexts = new ArrayList<IPCSCContext>(
-				pcsclibs.size());
+				libraries.size());
 		Exception cause = null;
-		for (IPCSCLib pcsclib : pcsclibs) {
+		for (INativePCSCLib pcsclib : libraries) {
 			IPCSCContext context;
 
 			try {
@@ -91,12 +95,15 @@ public class NativePCSCSystem implements IPCSCContextFactory {
 		return new PCSCMultiContext(this, contexts);
 	}
 
-	public void registerLibrary(IPCSCLib pcsclib) {
+	public List<INativePCSCLib> getLibraries() {
+		return new ArrayList<>(libraries);
+	}
+
+	public void registerLibrary(INativePCSCLib pcsclib) {
 		if (Log.isLoggable(Level.FINEST)) {
-			Log.finest("" + this + " adding library " + pcsclib.getPath() + "; executor threads " + pcsclib.isUseExecutorThread() + "; blocking " + pcsclib.isUseBlockingGetStatusChange()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+			Log.finest("" + this + " adding " + pcsclib); //$NON-NLS-1$ //$NON-NLS-2$ 
 		}
-		pcsclib.createNativeWrapper();
-		pcsclibs.add(pcsclib);
+		libraries.add(pcsclib);
 	}
 
 	@Override

@@ -33,22 +33,61 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 /**
- * An object view to the PCSC context.
+ * The iconified PC/SC context.
+ * 
+ * This is created by some {@link IPCSCContextFactory}, available at
+ * {@link PCSCContextFactory#get()}
  * 
  */
 public interface IPCSCContext extends IPCSCContextFactory {
 
-	public PCSCConnection connect(String readerName, int shareMode, int protocol)
-			throws PCSCException;
+	/**
+	 * Open an {@link IPCSCConnection}.
+	 * 
+	 * @param readerName
+	 * @param shareMode
+	 * @param protocol
+	 * @return
+	 * @throws PCSCException
+	 */
+	public IPCSCConnection connect(String readerName, int shareMode,
+			int protocol) throws PCSCException;
 
+	/**
+	 * Dispose the PC/SC context.
+	 * 
+	 * @throws PCSCException
+	 */
 	public abstract void dispose() throws PCSCException;
 
+	/**
+	 * Get a {@link PCSCCardReaderState} for the context and the selected
+	 * reader.
+	 * 
+	 * @param readerName
+	 * @param currentState
+	 * @param millisecTimeout
+	 * @return
+	 * @throws PCSCException
+	 * @throws TimeoutException
+	 */
 	public PCSCCardReaderState getStatusChange(String readerName,
 			PCSCCardReaderState currentState, int millisecTimeout)
 			throws PCSCException, TimeoutException;
 
+	/**
+	 * <code>true</code> if this object is already disposed.
+	 * 
+	 * @return <code>true</code> if this object is already disposed.
+	 */
 	public boolean isDisposed();
 
+	/**
+	 * Enumerate all readers.
+	 * 
+	 * @return
+	 * @throws PCSCException
+	 */
 	public abstract List<IPCSCCardReader> listReaders() throws PCSCException;
 
 }

@@ -35,6 +35,13 @@ import de.intarsys.nativec.type.NativeNumber;
 import de.intarsys.nativec.type.NativeType;
 import de.intarsys.tools.system.SystemTools;
 
+/**
+ * For some reason the DWord in PC/SC Lite header files is declared as 8 byte in
+ * 64 bit Linux.
+ * 
+ * On all other platforms in this universe a DWord is 4 byte.
+ * 
+ */
 public class NativePcscDword extends NativeNumber {
 
 	/** The meta class instance */

@@ -29,6 +29,10 @@
  */
 package de.intarsys.security.smartcard.pcsc.nativec;
 
+/**
+ * The iconified handle to a PC/SC connection
+ * 
+ */
 public class SCARDHANDLE {
 
 	private long value;

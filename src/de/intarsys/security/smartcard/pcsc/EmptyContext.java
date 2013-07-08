@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 /**
- * An dummy context.
+ * A dummy context.
  * 
  */
 public class EmptyContext implements IPCSCContext {
@@ -51,8 +51,8 @@ public class EmptyContext implements IPCSCContext {
 	}
 
 	@Override
-	public PCSCConnection connect(String readerName, int shareMode, int protocol)
-			throws PCSCException {
+	public IPCSCConnection connect(String readerName, int shareMode,
+			int protocol) throws PCSCException {
 		return null;
 	}
 

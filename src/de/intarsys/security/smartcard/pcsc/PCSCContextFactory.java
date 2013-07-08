@@ -29,20 +29,46 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
-public interface IPCSCLib extends IPCSCContextFactory {
+import de.intarsys.tools.system.SystemTools;
 
-	public void createNativeWrapper();
+/**
+ * A singleton access for the {@link IPCSCContextFactory} on this system.
+ * 
+ */
+public class PCSCContextFactory {
 
-	public String getPath();
+	private static IPCSCContextFactory ACTIVE;
 
-	public boolean isUseBlockingGetStatusChange();
+	private static boolean pcscLite = false;
 
-	public boolean isUseExecutorThread();
+	static {
+		pcscLite = !SystemTools.isWindows();
+	}
 
-	public void setPath(String path);
+	static public IPCSCContextFactory get() {
+		if (ACTIVE == null) {
+			return NativePCSCContextFactory.get();
+		}
+		return ACTIVE;
+	}
 
-	public void setUseBlockingGetStatusChange(boolean useBlockingGetStatusChange);
+	synchronized public static boolean isPcscLite() {
+		return pcscLite;
+	}
 
-	public void setUseExecutorThread(boolean useExecutorThread);
+	synchronized static public int mapControlCode(int code) {
+		if (pcscLite) {
+			return 0x42000000 | code;
+		}
+		return 0x310000 | (code << 2);
+	}
+
+	static public void set(IPCSCContextFactory active) {
+		ACTIVE = active;
+	}
+
+	synchronized protected static void setPcscLite(boolean pPcscLite) {
+		pcscLite = pPcscLite;
+	}
 
 }

@@ -41,8 +41,8 @@ import de.intarsys.security.smartcard.pcsc.EmptyContext;
 import de.intarsys.security.smartcard.pcsc.IPCSCCardReader;
 import de.intarsys.security.smartcard.pcsc.IPCSCContext;
 import de.intarsys.security.smartcard.pcsc.IPCSCContextFactory;
-import de.intarsys.security.smartcard.pcsc.NativePCSCSystem;
 import de.intarsys.security.smartcard.pcsc.PCSCException;
+import de.intarsys.security.smartcard.pcsc.PCSCContextFactory;
 import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 import de.intarsys.tools.event.AttributeChangedEvent;
 
@@ -80,7 +80,7 @@ public class StandardCardSystem extends CommonCardSystem {
 	public StandardCardSystem(IPCSCContextFactory factory) throws PCSCException {
 		super();
 		if (factory == null) {
-			this.pcscContextFactory = NativePCSCSystem.get();
+			this.pcscContextFactory = PCSCContextFactory.get();
 		} else {
 			this.pcscContextFactory = factory;
 		}

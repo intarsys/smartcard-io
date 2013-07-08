@@ -38,7 +38,7 @@ import de.intarsys.security.smartcard.card.CardReset;
 import de.intarsys.security.smartcard.card.CommonCardConnection;
 import de.intarsys.security.smartcard.card.RequestAPDU;
 import de.intarsys.security.smartcard.card.ResponseAPDU;
-import de.intarsys.security.smartcard.pcsc.PCSCConnection;
+import de.intarsys.security.smartcard.pcsc.IPCSCConnection;
 import de.intarsys.security.smartcard.pcsc.PCSCException;
 import de.intarsys.security.smartcard.pcsc.PCSCReset;
 import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
@@ -65,11 +65,11 @@ public class StandardCardConnection extends CommonCardConnection {
 
 	private static final Logger Log = PACKAGE.Log;
 
-	final private PCSCConnection pcscConnection;
+	final private IPCSCConnection pcscConnection;
 
 	protected StandardCardConnection(StandardCard pCard, int id,
 			ScheduledExecutorService executorTask, boolean exclusive,
-			PCSCConnection pPcscConnection) {
+			IPCSCConnection pPcscConnection) {
 		super(pCard, id, executorTask, exclusive);
 		this.pcscConnection = pPcscConnection;
 		if (Log.isLoggable(Level.FINEST)) {
@@ -79,7 +79,7 @@ public class StandardCardConnection extends CommonCardConnection {
 
 	protected StandardCardConnection(StandardCardTerminal pCardTerminal,
 			int id, ScheduledExecutorService executorTask, boolean exclusive,
-			PCSCConnection pPcscConnection) {
+			IPCSCConnection pPcscConnection) {
 		super(pCardTerminal, id, executorTask, exclusive);
 		this.pcscConnection = pPcscConnection;
 		if (Log.isLoggable(Level.FINEST)) {

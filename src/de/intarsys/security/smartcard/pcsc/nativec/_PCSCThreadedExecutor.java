@@ -42,6 +42,14 @@ import de.intarsys.nativec.type.NativeString;
 import de.intarsys.tools.concurrent.ThreadTools;
 import de.intarsys.tools.exception.ExceptionTools;
 
+/**
+ * This {@link _IPCSC} API implementation is a simple wrapper to force all
+ * requests in a single executor.
+ * 
+ * This is an artifact needed as a workaround for bugs provided by some creative
+ * hardware implementors drivers...
+ * 
+ */
 public class _PCSCThreadedExecutor implements _IPCSC {
 
 	private final _IPCSC pcsc;

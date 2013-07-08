@@ -29,8 +29,21 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
+/**
+ * A factory for an {@link IPCSCContext}.
+ * 
+ * This is a simplification to allow client code to ask a new context directly
+ * from an existing context.
+ * 
+ */
 public interface IPCSCContextFactory {
 
+	/**
+	 * Create a new {@link IPCSCContext}.
+	 * 
+	 * @return The new {@link IPCSCContext}.
+	 * @throws PCSCException
+	 */
 	public IPCSCContext establishContext() throws PCSCException;
 
 }

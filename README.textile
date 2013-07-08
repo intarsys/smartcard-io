@@ -25,7 +25,7 @@ The code for the intarsys native abstraction is BSD, available at Github, "intar
 
 h2. Usage
 
-A pre-build jar file is available in the "deploy" folder. Together with the dependencies in "lib", add
+A pre-built jar file is available in the "deploy" folder. Together with the dependencies in "lib", add
 to the classpath for your project.
 
 More to be done...

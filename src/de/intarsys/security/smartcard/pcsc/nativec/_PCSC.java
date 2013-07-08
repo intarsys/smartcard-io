@@ -45,7 +45,11 @@ import de.intarsys.tools.string.StringTools;
 import de.intarsys.tools.system.SystemTools;
 
 /**
- * Native wrapper only.
+ * The concrete intarsys native-c based PC/SC wrapper declaration.
+ * 
+ * The implementation by default auto-detects the platform and selects the
+ * native library. As an alternative you can provide an explicit native library
+ * name.
  * 
  */
 public class _PCSC implements _IPCSC {

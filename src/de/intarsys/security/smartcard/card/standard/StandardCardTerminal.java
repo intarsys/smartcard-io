@@ -41,9 +41,9 @@ import de.intarsys.security.smartcard.card.CommonCardConnection;
 import de.intarsys.security.smartcard.card.CommonCardTerminal;
 import de.intarsys.security.smartcard.card.EnumCardState;
 import de.intarsys.security.smartcard.pcsc.IPCSCCardReader;
+import de.intarsys.security.smartcard.pcsc.IPCSCConnection;
 import de.intarsys.security.smartcard.pcsc.IPCSCContext;
 import de.intarsys.security.smartcard.pcsc.PCSCCardReaderState;
-import de.intarsys.security.smartcard.pcsc.PCSCConnection;
 import de.intarsys.security.smartcard.pcsc.PCSCException;
 import de.intarsys.security.smartcard.pcsc.PCSCReset;
 import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
@@ -58,7 +58,7 @@ import de.intarsys.tools.event.INotificationSupport;
  * {@link IPCSCContext} is defined by the {@link IPCSCCardReader} instance.
  * 
  * Upon connecting, this implementation will create a new {@link IPCSCContext}
- * AND a {@link PCSCConnection}. This is done for maximum decoupling and PCSC
+ * AND a {@link IPCSCConnection}. This is done for maximum decoupling and PCSC
  * platform and version independence (some platforms may serialize requests to
  * the same context).
  * <p>
@@ -110,7 +110,7 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 		try {
 			IPCSCContext context = getPcscCardReader().getContext()
 					.establishContext();
-			PCSCConnection connection = context.connect(getPcscCardReader()
+			IPCSCConnection connection = context.connect(getPcscCardReader()
 					.getName(), _IPCSC.SCARD_SHARE_DIRECT,
 					_IPCSC.SCARD_PROTOCOL_UNDEFINED);
 			StandardCardConnection newChannel = new StandardCardConnection(
@@ -128,9 +128,9 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 		try {
 			IPCSCContext context = getPcscCardReader().getContext()
 					.establishContext();
-			PCSCConnection pcscConnection = context.connect(getPcscCardReader()
-					.getName(), _IPCSC.SCARD_SHARE_EXCLUSIVE,
-					_IPCSC.SCARD_PROTOCOL_Tx);
+			IPCSCConnection pcscConnection = context.connect(
+					getPcscCardReader().getName(),
+					_IPCSC.SCARD_SHARE_EXCLUSIVE, _IPCSC.SCARD_PROTOCOL_Tx);
 			return new StandardCardConnection(card, id, executor, true,
 					pcscConnection);
 		} catch (PCSCReset e) {
@@ -145,8 +145,8 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 		try {
 			IPCSCContext context = getPcscCardReader().getContext()
 					.establishContext();
-			PCSCConnection pcscConnection = context.connect(getPcscCardReader()
-					.getName(), _IPCSC.SCARD_SHARE_SHARED,
+			IPCSCConnection pcscConnection = context.connect(
+					getPcscCardReader().getName(), _IPCSC.SCARD_SHARE_SHARED,
 					_IPCSC.SCARD_PROTOCOL_Tx);
 			return new StandardCardConnection(card, id, executor, false,
 					pcscConnection);

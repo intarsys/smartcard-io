@@ -35,6 +35,10 @@ import java.util.Map;
 import de.intarsys.security.smartcard.pcsc.nativec.SCARD_READERSTATE;
 import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
 
+/**
+ * The PC/SC model level card reader state.
+ * 
+ */
 public class PCSCCardReaderState {
 
 	public static final PCSCCardReaderState UNAWARE = new PCSCCardReaderState(

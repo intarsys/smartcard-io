@@ -36,6 +36,10 @@ import de.intarsys.nativec.type.NativeLongLP64;
 import de.intarsys.nativec.type.NativeString;
 import de.intarsys.security.smartcard.pcsc.PCSCException;
 
+/**
+ * This interface mimics the PCSC-Lite/Winscard API.
+ * 
+ */
 public interface _IPCSC extends _PCSC_RETURN_CODES {
 
 	public static final int CM_IOCTL_GET_FEATURE_REQUEST = 3400;

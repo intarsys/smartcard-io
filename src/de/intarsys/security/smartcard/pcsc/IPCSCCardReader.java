@@ -30,7 +30,7 @@
 package de.intarsys.security.smartcard.pcsc;
 
 /**
- * The abstraction of a card reader terminal in PCSC.
+ * The iconified PC/SC card reader terminal.
  * 
  * This is created by {@link IPCSCContext#listReaders()}.
  * 
@@ -38,6 +38,7 @@ package de.intarsys.security.smartcard.pcsc;
 public interface IPCSCCardReader {
 
 	public interface IStatusListener {
+
 		public void onException(PCSCException e);
 
 		public void onStatusChange(PCSCCardReaderState cardReaderState);

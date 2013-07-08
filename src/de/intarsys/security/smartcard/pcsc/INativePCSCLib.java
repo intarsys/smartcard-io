@@ -29,12 +29,12 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
-public class PCSCNoLibraryLoadedException extends PCSCException {
-
-	private static final long serialVersionUID = 1L;
-
-	public PCSCNoLibraryLoadedException() {
-		super("no library loaded"); //$NON-NLS-1$
-	}
+/**
+ * The abstraction of an external library implementing the PC/SC API. These
+ * libraries get installed in the {@link NativePCSCContextFactory}.
+ * 
+ * Currently we only need to create the {@link IPCSCContext}, but who knows...
+ */
+public interface INativePCSCLib extends IPCSCContextFactory {
 
 }

@@ -49,58 +49,57 @@ import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
 import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 import de.intarsys.tools.string.StringTools;
 
-public class PCSCContextLazy extends CommonPCSCContext {
+/**
+ * The default {@link IPCSCContext} implementation.
+ * 
+ */
+public class PCSCContext extends CommonPCSCContext {
 
 	private static final Logger Log = PACKAGE.Log;
 
-	private static final int MAX_RETRIES = 3;
-
 	private int connectCounter = 0;
 
-	private int contextLazyReference = 0;
+	private boolean interrupted;
 
-	private SCARDCONTEXT hContextLazy;
+	private NativeBuffer readerNames = new NativeBuffer(100);
 
-	private boolean interrupted = false;
+	private final NativePcscDword readersSize = new NativePcscDword(0);
 
-	private List<IPCSCCardReader> lastReaderList;
-
-	private long statusChangeInterval = 60000;
-
-	public PCSCContextLazy(IPCSCLib lib, _IPCSC pcsc) {
+	public PCSCContext(INativePCSCLib lib, _IPCSC pcsc) {
 		super(lib, pcsc);
 	}
 
-	protected SCARDCONTEXT acquireLazy() throws PCSCException {
-		synchronized (lockContext) {
-			contextLazyReference++;
-			if (getHContext() == null) {
-				if (hContextLazy == null) {
-					hContextLazy = basicAcquire();
-				}
-				return hContextLazy;
-			}
-			return getHContext();
-		}
+	public PCSCContext(INativePCSCLib lib, _IPCSC pcsc, SCARDCONTEXT pHContext) {
+		super(lib, pcsc, pHContext);
 	}
 
 	public void cancelGetStatusChange() throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " cancel getStatusChange"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
-		synchronized (lock) {
-			interrupted = true;
-			lock.notifyAll();
+		if (isUseBlockingGetStatusChange()) {
+			SCARDCONTEXT tempContext = getHContext();
+			// disposed?
+			if (tempContext != null) {
+				int rc = getPcsc().SCardCancel(tempContext);
+				if (!isDisposed()) {
+					PCSCException.checkReturnCode(rc);
+				}
+			}
+		} else {
+			synchronized (lock) {
+				interrupted = true;
+				lock.notifyAll();
+			}
 		}
 	}
 
 	@Override
-	public PCSCConnection connect(String readerName, int shareMode, int protocol)
-			throws PCSCException {
+	public IPCSCConnection connect(String readerName, int shareMode,
+			int protocol) throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " connect"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
-		SCARDCONTEXT tempContext = acquireLazy();
 		NativeString nReaderName = new NativeString(readerName);
 		NativeLongLP64 phCard = new NativeLongLP64();
 		NativePcscDword activeProtocol = new NativePcscDword();
@@ -109,97 +108,66 @@ public class PCSCContextLazy extends CommonPCSCContext {
 			synchronized (lock) {
 				connectCounter++;
 			}
+			SCARDCONTEXT tempContext = getHContext();
+			if (tempContext == null) {
+				throw new PCSCException(
+						_PCSC_RETURN_CODES.SCARD_E_INVALID_HANDLE);
+			}
 			int rc = getPcsc().SCardConnect(tempContext, nReaderName,
 					shareMode, protocol, phCard, activeProtocol);
-			PCSCTools.checkReturnCode(rc);
-			INativeHandle protocolHandle = getProtocolHandle(activeProtocol
-					.intValue());
-			// acquire once more for the connection...
-			acquireLazy();
-			return new PCSCConnection(this,
-					new SCARDHANDLE(phCard.longValue()), shareMode, protocol,
-					protocolHandle);
+			PCSCException.checkReturnCode(rc);
 		} finally {
-			releaseLazy();
 			synchronized (lock) {
 				connectCounter--;
 			}
 		}
+
+		INativeHandle protocolHandle = getProtocolHandle(activeProtocol
+				.intValue());
+		return new PCSCConnection(this, new SCARDHANDLE(phCard.longValue()),
+				shareMode, protocol, protocolHandle);
 	}
 
 	@Override
-	public void dispose() throws PCSCException {
-		synchronized (lockContext) {
-			if (contextLazyReference > 0) {
-				hContextLazy = hContext;
-				hContext = null;
-				return;
-			}
-			super.dispose();
-		}
-	}
-
-	@Override
-	protected void fromConnectionDisconnect(PCSCConnection connection,
-			long disposition) throws PCSCException {
-		try {
-			super.fromConnectionDisconnect(connection, disposition);
-		} finally {
-			releaseLazy();
-		}
-	}
-
-	@Override
-	public void getStatusChange(SCARD_READERSTATE readerState,
+	protected void getStatusChange(SCARD_READERSTATE readerState,
 			int millisecTimeout) throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
-			Log.finest("" + this + " get status change"); //$NON-NLS-1$ //$NON-NLS-2$
+			Log.finest("" + this + " get status change, blocking=" //$NON-NLS-1$//$NON-NLS-2$
+					+ isUseBlockingGetStatusChange());
 		}
 		try {
 			long start = System.currentTimeMillis();
 			synchronized (lock) {
 				interrupted = false;
 			}
-			int currentState;
-			currentState = readerState.getCurrentState();
+			int currentState = readerState.getCurrentState();
 			while (readerState.getEventState() == currentState) {
-				if ((readerState.getEventState() & _IPCSC.SCARD_STATE_PRESENT) == 0) {
-					// no card found yet
+				if (!isUseBlockingGetStatusChange()) {
 					readerState.setCurrentState(_IPCSC.SCARD_STATE_UNAWARE);
-					try {
-						SCARDCONTEXT tempContext = acquireLazy();
-						int rc = 0;
-						// do your best
-						for (int retries = 0; retries <= MAX_RETRIES; retries++) {
-							rc = getPcsc().SCardGetStatusChange(tempContext, 0,
-									readerState, 1);
-							if (readerState.getEventState() != 0) {
-								break;
-							}
-							if (retries < MAX_RETRIES) {
-								// du no ask me.... but it helps...
-								NativePcscDword readersSize = new NativePcscDword(
-										0);
-								// force re-read, seems to be a kobil....
-								rc = getPcsc().SCardListReaders(tempContext,
-										null, null, readersSize);
-							}
-						}
-						PCSCTools.checkReturnCode(rc);
-					} finally {
-						releaseLazy();
-					}
 				}
-				long stop = System.currentTimeMillis();
-				if (millisecTimeout >= 0 && stop - start >= millisecTimeout) {
-					return;
+				SCARDCONTEXT tempContext = getHContext();
+				if (tempContext == null) {
+					throw new PCSCException(
+							_PCSC_RETURN_CODES.SCARD_E_CANCELLED);
 				}
-				if (readerState.getEventState() == currentState) {
+				int rc = getPcsc().SCardGetStatusChange(tempContext,
+						millisecTimeout, readerState, 1);
+				PCSCException.checkReturnCode(rc);
+				if (!isUseBlockingGetStatusChange()
+						&& readerState.getEventState() == currentState) {
 					synchronized (lock) {
 						if (interrupted) {
-							// reset interrupted flag on daemon
 							throw new PCSCException(
 									_PCSC_RETURN_CODES.SCARD_E_CANCELLED);
+						}
+						if (millisecTimeout == 0) {
+							return;
+						}
+						long timePassed = System.currentTimeMillis() - start;
+						if (millisecTimeout > 0
+								&& timePassed >= millisecTimeout) {
+							throw new PCSCException(
+									_PCSC_RETURN_CODES.SCARD_E_TIMEOUT);
 						}
 						try {
 							lock.wait(1000);
@@ -208,7 +176,6 @@ public class PCSCContextLazy extends CommonPCSCContext {
 									_PCSC_RETURN_CODES.SCARD_E_CANCELLED);
 						}
 						if (interrupted) {
-							// reset interrupted flag on daemon
 							throw new PCSCException(
 									_PCSC_RETURN_CODES.SCARD_E_CANCELLED);
 						}
@@ -220,10 +187,6 @@ public class PCSCContextLazy extends CommonPCSCContext {
 				interrupted = false;
 			}
 		}
-	}
-
-	public long getStatusChangeInterval() {
-		return statusChangeInterval;
 	}
 
 	@Override
@@ -235,57 +198,43 @@ public class PCSCContextLazy extends CommonPCSCContext {
 
 	@Override
 	public List<IPCSCCardReader> listReaders() throws PCSCException {
-		if (lastReaderList != null && lastReaderList.size() > 0) {
-			return new ArrayList<IPCSCCardReader>(lastReaderList);
+		readersSize.setValue(readerNames.getSize());
+		SCARDCONTEXT tempContext = getHContext();
+		if (tempContext == null) {
+			return Collections.emptyList();
 		}
-		SCARDCONTEXT tempContext = acquireLazy();
-		try {
-			NativePcscDword readersSize = new NativePcscDword(0);
-			int rc = getPcsc().SCardListReaders(tempContext, null, null,
-					readersSize);
-			if (rc == SCARD_E_NO_READERS_AVAILABLE) {
-				return Collections.emptyList();
-			}
-			PCSCTools.checkReturnCode(rc);
-			int size = readersSize.intValue();
-			NativeBuffer readerNames = new NativeBuffer(size);
+		int rc = getPcsc().SCardListReaders(tempContext, null, readerNames,
+				readersSize);
+		int size = readersSize.intValue();
+		while (rc == _PCSC_RETURN_CODES.SCARD_E_INSUFFICIENT_BUFFER
+				|| size > readerNames.getSize()) {
+			readerNames = new NativeBuffer(size);
 			rc = getPcsc().SCardListReaders(tempContext, null, readerNames,
 					readersSize);
-			PCSCTools.checkReturnCode(rc);
-			List<IPCSCCardReader> readerList = new ArrayList<IPCSCCardReader>(3);
-			for (int i = 0; i < size; i++) {
-				String name = readerNames.getString(i);
-				if (!StringTools.isEmpty(name)) {
-					readerList.add(new PCSCCardReader(this, name));
-					i += name.length();
-				}
-			}
-			lastReaderList = new ArrayList<IPCSCCardReader>(readerList);
-			return readerList;
-		} finally {
-			releaseLazy();
+			size = readersSize.intValue();
 		}
-	}
+		if (rc == SCARD_E_NO_READERS_AVAILABLE) {
+			return Collections.emptyList();
+		}
+		PCSCException.checkReturnCode(rc);
 
-	protected void releaseLazy() throws PCSCException {
-		synchronized (lockContext) {
-			contextLazyReference--;
-			if (contextLazyReference == 0) {
-				if (hContextLazy == null) {
-					return;
-				}
-				basicRelease(hContextLazy);
-				hContextLazy = null;
+		List<IPCSCCardReader> readerList = new ArrayList<IPCSCCardReader>(3);
+		for (int i = 0; i < size; i++) {
+			String name = readerNames.getString(i);
+			if (!StringTools.isEmpty(name)) {
+				readerList.add(new PCSCCardReader(this, name));
+				i += name.length();
 			}
 		}
-	}
-
-	public void setStatusChangeInterval(long statusChangeInterval) {
-		this.statusChangeInterval = statusChangeInterval;
+		return readerList;
 	}
 
 	@Override
 	public String toString() {
-		return "PCSC Context Kobil"; //$NON-NLS-1$
+		SCARDCONTEXT context = getHContext();
+		if (context != null) {
+			return "PCSC Context " + Long.toHexString(context.longValue()); //$NON-NLS-1$
+		}
+		return "PCSC Context not established"; //$NON-NLS-1$
 	}
 }

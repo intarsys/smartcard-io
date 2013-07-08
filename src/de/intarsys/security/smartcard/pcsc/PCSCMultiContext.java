@@ -33,6 +33,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * A special context that can elegate to multiple libraries.
+ * 
+ * This is useful in situations where we dynamically use (manufacturer
+ * dependent) PC/SC implementations, for example on a USB stick. No you can
+ * control these, together with the standard PC/SC resources, using single
+ * {@link IPCSCContext}.
+ * 
+ */
 public class PCSCMultiContext implements IPCSCContext {
 
 	private final List<IPCSCContext> contexts;
@@ -51,8 +60,8 @@ public class PCSCMultiContext implements IPCSCContext {
 	}
 
 	@Override
-	public PCSCConnection connect(String readerName, int shareMode, int protocol)
-			throws PCSCException {
+	public IPCSCConnection connect(String readerName, int shareMode,
+			int protocol) throws PCSCException {
 		return null;
 	}
 

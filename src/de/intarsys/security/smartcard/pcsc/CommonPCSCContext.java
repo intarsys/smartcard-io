@@ -42,6 +42,17 @@ import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
 import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 import de.intarsys.tools.concurrent.ThreadTools;
 
+/**
+ * A common implementation for {@link IPCSCContext}.
+ * 
+ * The separation of common code to this superclass was due to the fact that the
+ * PC/SC API implementations of some manufacturer were quite poor and needed
+ * some special tweaks on each call on the java side...
+ * 
+ * In these days we only use the standard concrete implementation
+ * {@link PCSCContext}.
+ * 
+ */
 abstract public class CommonPCSCContext implements IPCSCContext {
 
 	private static final Logger Log = PACKAGE.Log;
@@ -50,7 +61,7 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 
 	final private _IPCSC pcsc;
 
-	final private IPCSCLib lib;
+	final private INativePCSCLib lib;
 
 	final protected Object lock = new Object();
 
@@ -58,12 +69,12 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 
 	private boolean useBlockingGetStatusChange;
 
-	protected CommonPCSCContext(IPCSCLib lib, _IPCSC pcsc) {
+	protected CommonPCSCContext(INativePCSCLib lib, _IPCSC pcsc) {
 		this.lib = lib;
 		this.pcsc = pcsc;
 	}
 
-	protected CommonPCSCContext(IPCSCLib pLib, _IPCSC pPcsc,
+	protected CommonPCSCContext(INativePCSCLib pLib, _IPCSC pPcsc,
 			SCARDCONTEXT pHContext) {
 		lib = pLib;
 		pcsc = pPcsc;
@@ -88,7 +99,7 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 				ThreadTools.sleep(50);
 				continue;
 			}
-			PCSCTools.checkReturnCode(rc);
+			PCSCException.checkReturnCode(rc);
 			break;
 		}
 		SCARDCONTEXT result = new SCARDCONTEXT(phContext.longValue());
@@ -97,7 +108,7 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 
 	protected void basicRelease(SCARDCONTEXT pHContext) throws PCSCException {
 		int rc = pcsc.SCardReleaseContext(pHContext);
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 	}
 
 	@Override
@@ -138,14 +149,14 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 	protected void fromConnectionBeginTransaction(PCSCConnection connection)
 			throws PCSCException {
 		int rc = getPcsc().SCardBeginTransaction(connection.getHCard());
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 	}
 
 	protected void fromConnectionDisconnect(PCSCConnection connection,
 			long disposition) throws PCSCException {
 		int rc = getPcsc().SCardDisconnect(connection.getHCard(), disposition);
 		try {
-			PCSCTools.checkReturnCode(rc);
+			PCSCException.checkReturnCode(rc);
 		} catch (PCSCException e) {
 			if (isDisposed()) {
 				// we may have destroyed the context to shutdown...
@@ -161,7 +172,7 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 		int rc = getPcsc().SCardEndTransaction(connection.getHCard(),
 				disposition);
 		try {
-			PCSCTools.checkReturnCode(rc);
+			PCSCException.checkReturnCode(rc);
 		} catch (PCSCException e) {
 			if (isDisposed()) {
 				// we may have destroyed the context to shutdown...
@@ -178,7 +189,7 @@ abstract public class CommonPCSCContext implements IPCSCContext {
 		}
 	}
 
-	public IPCSCLib getLib() {
+	public INativePCSCLib getLib() {
 		return lib;
 	}
 

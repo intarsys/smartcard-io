@@ -36,7 +36,19 @@ import de.intarsys.security.smartcard.pcsc.nativec._PCSC;
 import de.intarsys.security.smartcard.pcsc.nativec._PCSCThreadedExecutor;
 import de.intarsys.tools.system.SystemTools;
 
-abstract public class CommonPCSCLib implements IPCSCLib {
+/**
+ * A common implementation for a native library, installed in the
+ * {@link NativePCSCContextFactory}.
+ * 
+ * The separation of common code to this superclass was due to the fact that the
+ * PC/SC API implementations of some manufacturer were quite poor and needed
+ * some special tweaks on each call on the java side...
+ * 
+ * In these days we only use the standard concrete implementation
+ * {@link NativePCSCLib}.
+ * 
+ */
+abstract public class CommonPCSCLib implements INativePCSCLib {
 
 	private _IPCSC pcsc;
 
@@ -49,8 +61,7 @@ abstract public class CommonPCSCLib implements IPCSCLib {
 	public CommonPCSCLib() {
 	}
 
-	@Override
-	public void createNativeWrapper() {
+	protected void createNativeWrapper() {
 		_PCSC nativeWrapper = new _PCSC(path);
 		if (useExecutorThread) {
 			pcsc = new _PCSCThreadedExecutor(nativeWrapper);
@@ -59,7 +70,6 @@ abstract public class CommonPCSCLib implements IPCSCLib {
 		}
 	}
 
-	@Override
 	public String getPath() {
 		return path;
 	}
@@ -69,32 +79,40 @@ abstract public class CommonPCSCLib implements IPCSCLib {
 	}
 
 	@PostConstruct
-	public void initializeAfterConstruction() {
-		NativePCSCSystem.get().registerLibrary(this);
+	public void initialize() {
+		createNativeWrapper();
+		NativePCSCContextFactory.get().registerLibrary(this);
 	}
 
-	@Override
 	public boolean isUseBlockingGetStatusChange() {
 		return useBlockingGetStatusChange;
 	}
 
-	@Override
 	public boolean isUseExecutorThread() {
 		return useExecutorThread;
 	}
 
-	@Override
 	public void setPath(String path) {
 		this.path = path;
 	}
 
-	@Override
 	public void setUseBlockingGetStatusChange(boolean useBlockingGetStatusChange) {
 		this.useBlockingGetStatusChange = useBlockingGetStatusChange;
 	}
 
-	@Override
 	public void setUseExecutorThread(boolean useExecutorThread) {
 		this.useExecutorThread = useExecutorThread;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("PC/SC library; path ");
+		sb.append(getPath());
+		sb.append("; executor ");
+		sb.append(isUseExecutorThread());
+		sb.append("; blocking ");
+		sb.append(isUseBlockingGetStatusChange());
+		return sb.toString();
 	}
 }

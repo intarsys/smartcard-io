@@ -29,6 +29,10 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
+/**
+ * PC/SC attribute related constants.
+ * 
+ */
 public class PCSCAttribute {
 
 	// all constants imported from WinSmCrd.h

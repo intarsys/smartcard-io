@@ -38,8 +38,6 @@ import java.util.logging.Logger;
 /**
  * The default {@link IPCSCCardReader} implementation.
  * 
- * The listeners attribute is accessed from multiple threads!
- * 
  */
 public class PCSCCardReader implements IPCSCCardReader {
 
@@ -59,7 +57,7 @@ public class PCSCCardReader implements IPCSCCardReader {
 
 	final private int id;
 
-	protected PCSCCardReader(IPCSCContext context, String readerName) {
+	public PCSCCardReader(IPCSCContext context, String readerName) {
 		this.id = Counter++;
 		this.context = context;
 		this.name = readerName;

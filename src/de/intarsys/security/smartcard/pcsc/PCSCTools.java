@@ -29,53 +29,25 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
-import static de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES.SCARD_S_SUCCESS;
-
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 import de.intarsys.tools.string.StringTools;
-import de.intarsys.tools.system.SystemTools;
 
-public class PCSCTools {
+/**
+ * Some tools for handling PC/SC.
+ * 
+ */
+final public class PCSCTools {
 
-	private static boolean pcscLite = false;
+	static final Logger Log = PACKAGE.Log;
 
-	private static final Logger Log = PACKAGE.Log;
-
-	static {
-		pcscLite = !SystemTools.isWindows();
-	}
-
-	public static void checkReturnCode(int rc) throws PCSCException {
-		if (rc == SCARD_S_SUCCESS) {
-			return;
-		}
-		if (rc == _PCSC_RETURN_CODES.SCARD_W_RESET_CARD) {
-			if (Log.isLoggable(Level.FINEST)) {
-				Log.info("card was reset"); //$NON-NLS-1$ 
-			}
-			throw new PCSCReset();
-		}
-		throw new PCSCException(rc);
-	}
-
-	synchronized public static boolean isPcscLite() {
-		return pcscLite;
-	}
-
-	synchronized static public int mapControlCode(int code) {
-		if (pcscLite) {
-			return 0x42000000 | code;
-		}
-		return 0x310000 | (code << 2);
-	}
-
-	synchronized protected static void setPcscLite(boolean pPcscLite) {
-		pcscLite = pPcscLite;
-	}
-
+	/**
+	 * Convert the resuilt of an {@link IPCSCConnection#getAttrib(int)} to a
+	 * String. You must be prepared to get a zero terminated byte array.
+	 * 
+	 * @param buffer
+	 * @return
+	 */
 	static public String toString(byte[] buffer) {
 		if (buffer == null || buffer.length == 0) {
 			return StringTools.EMPTY;

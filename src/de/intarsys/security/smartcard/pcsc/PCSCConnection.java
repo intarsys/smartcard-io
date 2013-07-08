@@ -39,10 +39,10 @@ import de.intarsys.security.smartcard.pcsc.nativec.SCARDHANDLE;
 import de.intarsys.tools.hex.HexTools;
 
 /**
- * The representation of a PCSC SCardHandle.
+ * The default {@link IPCSCConnection } implementation.
  * 
  */
-public class PCSCConnection {
+public class PCSCConnection implements IPCSCConnection {
 
 	private static final Logger Log = PACKAGE.Log;
 
@@ -73,6 +73,7 @@ public class PCSCConnection {
 		this.protocolHandle = protocolHandle;
 	}
 
+	@Override
 	public void beginTransaction() throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " begin transaction"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -91,6 +92,7 @@ public class PCSCConnection {
 	 * @return
 	 * @throws PCSCException
 	 */
+	@Override
 	public byte[] control(int controlCode, byte[] inBuffer, int inBufferOffset,
 			int inBufferLength, int outBufferSize) throws PCSCException {
 		logBytes("control 0x" + Integer.toHexString(controlCode) + " request", //$NON-NLS-1$ //$NON-NLS-2$
@@ -106,7 +108,7 @@ public class PCSCConnection {
 		int rc = getContext().getPcsc().SCardControl(hCard, controlCode,
 				nInBuffer, inBufferLength, outBuffer, outBuffer.getSize(),
 				bytesReturned);
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 		int size = bytesReturned.intValue();
 		byte[] result = outBuffer.getByteArray(0, size);
 		logBytes("control 0x" + Integer.toHexString(controlCode) + " response", //$NON-NLS-1$ //$NON-NLS-2$
@@ -129,15 +131,16 @@ public class PCSCConnection {
 	 * @return
 	 * @throws PCSCException
 	 */
+	@Override
 	public byte[] controlMapped(int code, byte[] inBuffer, int inBufferOffset,
 			int inBufferLength, int outBufferSize) throws PCSCException {
-		int controlCode = PCSCTools.mapControlCode(code);
+		int controlCode = PCSCContextFactory.mapControlCode(code);
 		synchronized (lockGetMapped) {
 			try {
 				return control(controlCode, inBuffer, inBufferOffset,
 						inBufferLength, outBufferSize);
 			} catch (PCSCException e1) {
-				if (PCSCTools.isPcscLite()) {
+				if (PCSCContextFactory.isPcscLite()) {
 					// we already use PCSCLite - no use in retrying
 					Log.log(Level.INFO,
 							"" //$NON-NLS-1$
@@ -152,8 +155,8 @@ public class PCSCConnection {
 								+ " control mapped request failed - retry PCSC lite version"); //$NON-NLS-1$
 				// switch to PCSCLite and retry. This is necessary in a Citrix
 				// environment with Unix/Mac based client
-				PCSCTools.setPcscLite(true);
-				controlCode = PCSCTools.mapControlCode(code);
+				PCSCContextFactory.setPcscLite(true);
+				controlCode = PCSCContextFactory.mapControlCode(code);
 				try {
 					// if this is fine we return the result and let the
 					// system stay in the PCSC lite state!
@@ -161,7 +164,7 @@ public class PCSCConnection {
 							inBufferLength, outBufferSize);
 				} catch (PCSCException e2) {
 					// bad luck if both fail, we must revert to windows...
-					PCSCTools.setPcscLite(false);
+					PCSCContextFactory.setPcscLite(false);
 					// and fail with the initial exception
 					Log.log(Level.INFO,
 							"" //$NON-NLS-1$
@@ -174,6 +177,7 @@ public class PCSCConnection {
 		}
 	}
 
+	@Override
 	public void disconnect(int disposition) throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " disconnect"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -182,6 +186,7 @@ public class PCSCConnection {
 		getContext().fromConnectionDisconnect(this, disposition);
 	}
 
+	@Override
 	public void endTransaction(int disposition) throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " end transaction"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -190,6 +195,7 @@ public class PCSCConnection {
 		getContext().fromConnectionEndTransaction(this, disposition);
 	}
 
+	@Override
 	public byte[] getAttrib(int attrId) throws PCSCException {
 		if (Log.isLoggable(Level.FINEST)) {
 			Log.finest("" + this + " get attrib " + attrId); //$NON-NLS-1$ //$NON-NLS-2$
@@ -198,7 +204,7 @@ public class PCSCConnection {
 		int rc = getContext().getPcsc().SCardGetAttrib(hCard, attrId, null,
 				bufferSize);
 		try {
-			PCSCTools.checkReturnCode(rc);
+			PCSCException.checkReturnCode(rc);
 		} catch (PCSCException ex) {
 			if (Log.isLoggable(Level.FINEST)) {
 				Log.finest("" + this + " get attrib " + attrId + " exception " + ex.getErrorCode()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -209,13 +215,14 @@ public class PCSCConnection {
 		NativeBuffer outBuffer = new NativeBuffer(bufferSize.intValue());
 		rc = getContext().getPcsc().SCardGetAttrib(hCard, attrId, outBuffer,
 				bufferSize);
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 		byte[] result = outBuffer.getByteArray(0, bufferSize.intValue());
 		logBytes("attrib 0x" + Integer.toHexString(attrId) + " response", //$NON-NLS-1$ //$NON-NLS-2$
 				result, 0, result.length, false);
 		return result;
 	}
 
+	@Override
 	public CommonPCSCContext getContext() {
 		return context;
 	}
@@ -224,18 +231,25 @@ public class PCSCConnection {
 		return hCard;
 	}
 
+	@Override
 	public int getProtocol() {
 		return protocol;
 	}
 
+	@Override
 	public int getShareMode() {
 		return shareMode;
 	}
 
+	@Override
 	public void getStatus() throws PCSCException {
+		// todo this is not completely implemented...
+		// currently it servers only for keep-alive as on we need a
+		// neutral method that can be periodically called on Windows Server
+		// platforms that will otherwise close the PC/SC resource
 		int rc = getContext().getPcsc().SCardStatus(hCard, null, null, null,
 				null, null, null);
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 	}
 
 	protected void logBytes(String mode, byte[] bytes, int offset, int length,
@@ -263,12 +277,13 @@ public class PCSCConnection {
 		}
 	}
 
+	@Override
 	public void reconnect(int shareMode, int protocol, int initialization)
 			throws PCSCException {
 		NativePcscDword activeProtocol = new NativePcscDword();
 		int rc = getContext().getPcsc().SCardReconnect(hCard, shareMode,
 				protocol, initialization, activeProtocol);
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 	}
 
 	@Override
@@ -276,6 +291,7 @@ public class PCSCConnection {
 		return "PCSC connection " + Long.toHexString(hCard.longValue()); //$NON-NLS-1$
 	}
 
+	@Override
 	public byte[] transmit(byte[] apdu, int apduOffset, int apduLength,
 			int recvLength, boolean sensitiveContent) throws PCSCException {
 		logBytes("transmit", apdu, apduOffset, apduLength, sensitiveContent); //$NON-NLS-1$
@@ -292,7 +308,7 @@ public class PCSCConnection {
 		nRecvLength.setValue(recvLength);
 		int rc = getContext().getPcsc().SCardTransmit(hCard, protocolHandle,
 				sendBuffer, apduLength, null, recvBuffer, nRecvLength);
-		PCSCTools.checkReturnCode(rc);
+		PCSCException.checkReturnCode(rc);
 		int responseSize = nRecvLength.intValue();
 		byte[] result = recvBuffer.getByteArray(0, responseSize);
 		logBytes("receive", result, 0, result.length, false); //$NON-NLS-1$
