@@ -1,0 +1,5 @@
+This program uses jna (https://github.com/twall/jna).
+
+jna is governed by the LGPL license, available in this directory.
+
+jna source code is available at https://github.com/twall/jna.

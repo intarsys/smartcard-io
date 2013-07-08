@@ -1,0 +1,82 @@
+h1. intarsys smartcard-io
+
+h2. Overview
+
+This project contains a PC/SC wrapper and smartcard abstraction layer. 
+
+In addition an alternative javax.smartcardio provider is provided.
+
+
+h2. Build
+
+The project is committed as a self contained Eclipse project and should compile without problems there.
+
+Anyone in Ant is kindly asked to provide a script... (as for maven)
+
+h2. Dependencies
+
+First of all, we need **some** code from the intarsys runtime. This is included in the "lib" 
+dependencies. The code itself is BSD licensed and again hosted at Github at "intarsys/runtime".
+
+Second, the native code is accessed via JNA in conjunction with the intarsys native platform 
+model (as we (1) didn't like the JNA provided one (2) have introduced a very small provider interface 
+for decoupling from JNA or any other implementation). Both libraries are included in the "lib" folder.
+The code for the intarsys native abstraction is BSD, available at Github, "intarsys/native-c".
+
+h2. Usage
+
+A pre-build jar file is available in the "deploy" folder. Together with the dependencies in "lib", add
+to the classpath for your project.
+
+More to be done...
+
+h2. License
+
+bc. 
+/*
+ * Copyright (c) 2013, intarsys consulting GmbH
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * - Neither the name of intarsys nor the names of its contributors may be used
+ *   to endorse or promote products derived from this software without specific
+ *   prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+</pre>
+
+h2. Service & Support
+
+If you need further support, feel free to contact us.
+
+bc. 
+intarsys consulting GmbH
+Kriegstrasse 100
+76135 Karlsruhe
+Fon +49 721 38479-0
+Fax +49 721 38479-60
+info@intarsys.de
+www.intarsys.de
+
+p. 
+For service and support contact <a href="mailto://support@intarsys.de">support@intarsys.de</a>
+
