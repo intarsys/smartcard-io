@@ -29,14 +29,15 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * The default {@link IPCSCCardReader} implementation.
+ * 
+ * {@link PCSCCardReader} instances are not implemented "unique" - each
+ * {@link IPCSCContext#listReaders()} will create a new instance.
  * 
  */
 public class PCSCCardReader implements IPCSCCardReader {
@@ -45,15 +46,9 @@ public class PCSCCardReader implements IPCSCCardReader {
 
 	private static int Counter = 0;
 
-	final private List<IStatusListener> listeners = new ArrayList<>();
-
-	final private PCSCStatusMonitor monitor = new PCSCStatusMonitor(this);
-
 	final private String name;
 
 	final private IPCSCContext context;
-
-	final private Object lock = new Object();
 
 	final private int id;
 
@@ -66,17 +61,6 @@ public class PCSCCardReader implements IPCSCCardReader {
 	}
 
 	@Override
-	public void addStatusListener(IStatusListener listener) {
-		synchronized (lock) {
-			boolean start = listeners.isEmpty();
-			listeners.add(listener);
-			if (start) {
-				getMonitor().start();
-			}
-		}
-	}
-
-	@Override
 	public IPCSCContext getContext() {
 		return context;
 	}
@@ -84,10 +68,6 @@ public class PCSCCardReader implements IPCSCCardReader {
 	@Override
 	public int getId() {
 		return id;
-	}
-
-	protected PCSCStatusMonitor getMonitor() {
-		return monitor;
 	}
 
 	@Override
@@ -102,37 +82,6 @@ public class PCSCCardReader implements IPCSCCardReader {
 		} catch (TimeoutException e) {
 			// will not happen
 			return PCSCCardReaderState.UNAWARE;
-		}
-	}
-
-	protected void onException(PCSCException e) {
-		List<IStatusListener> temp;
-		synchronized (lock) {
-			temp = new ArrayList<>(listeners);
-		}
-		for (IStatusListener listener : temp) {
-			listener.onException(e);
-		}
-	}
-
-	protected void onStatusChange(PCSCCardReaderState cardReaderState) {
-		List<IStatusListener> temp;
-		synchronized (lock) {
-			temp = new ArrayList<>(listeners);
-		}
-		for (IStatusListener listener : temp) {
-			listener.onStatusChange(cardReaderState);
-		}
-	}
-
-	@Override
-	public void removeStatusListener(IStatusListener listener) {
-		synchronized (lock) {
-			if (listeners.remove(listener)) {
-				if (listeners.isEmpty()) {
-					getMonitor().stop();
-				}
-			}
 		}
 	}
 

@@ -29,11 +29,13 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
-import static de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES.SCARD_E_CANCELLED;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 
 /**
  * Monitor the state of an {@link IPCSCCardReader}.
@@ -46,11 +48,17 @@ import java.util.logging.Logger;
  */
 public class PCSCStatusMonitor {
 
+	public interface IStatusListener {
+
+		public void onException(IPCSCCardReader reader, PCSCException e);
+
+		public void onStatusChange(IPCSCCardReader reader,
+				PCSCCardReaderState cardReaderState);
+	}
+
 	private final static Logger Log = PACKAGE.Log;
 
-	final private PCSCCardReader cardReader;
-
-	final private Object lock = new Object();
+	final private IPCSCCardReader reader;
 
 	private Thread monitorThread;
 
@@ -60,16 +68,30 @@ public class PCSCStatusMonitor {
 
 	private IPCSCContext pcscContext;
 
-	protected PCSCStatusMonitor(PCSCCardReader cardReader) {
-		this.cardReader = cardReader;
+	final private List<IStatusListener> listeners = new ArrayList<>();
+
+	final private Object lock = new Object();
+
+	public PCSCStatusMonitor(IPCSCCardReader cardReader) {
+		this.reader = cardReader;
 	}
 
-	protected PCSCCardReader getCardReader() {
-		return cardReader;
+	public void addStatusListener(IStatusListener listener) {
+		synchronized (lock) {
+			boolean start = listeners.isEmpty();
+			listeners.add(listener);
+			if (start) {
+				start();
+			}
+		}
 	}
 
 	protected IPCSCContext getPcscContext() {
 		return pcscContext;
+	}
+
+	public IPCSCCardReader getReader() {
+		return reader;
 	}
 
 	protected boolean monitor() {
@@ -83,71 +105,99 @@ public class PCSCStatusMonitor {
 				}
 			}
 			newReaderState = getPcscContext().getStatusChange(
-					getCardReader().getName(), oldReaderState, -1);
+					getReader().getName(), oldReaderState, -1);
 			if (Log.isLoggable(Level.FINEST)) {
 				Log.log(Level.FINEST,
 						""		+ this + " call getStatusChange() -> " + newReaderState.toString() + "(" + Integer.toBinaryString(newReaderState.getEventState()) + ")"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 			if (!newReaderState.isIgnore() && !newReaderState.isUnavailable()) {
-				getCardReader().onStatusChange(newReaderState);
+				onStatusChange(newReaderState);
 				oldReaderState = newReaderState;
 			}
 		} catch (PCSCException e) {
-			if (e.getErrorCode() == SCARD_E_CANCELLED
-					|| getPcscContext().isDisposed()) {
+			if (getPcscContext().isDisposed()) {
 				if (Log.isLoggable(Level.FINEST)) {
-					Log.log(Level.FINEST,
-							"" + this + " call to getStatusChange() cancelled"); //$NON-NLS-1$ //$NON-NLS-2$
+					Log.log(Level.FINEST, "" + this + " terminated"); //$NON-NLS-1$ //$NON-NLS-2$
 				}
-				// continue, if this terminal
-				// was meant to
-				// cancel the monitoring, then the task status
-				// will be set to cancel too
+				return false;
+			} else if (e.getErrorCode() == _PCSC_RETURN_CODES.SCARD_E_CANCELLED) {
+				if (Log.isLoggable(Level.FINEST)) {
+					Log.log(Level.FINEST, "" + this + " cancelled"); //$NON-NLS-1$ //$NON-NLS-2$
+				}
 				return true;
 			} else {
-				Log.log(Level.FINEST, "PCSC Exception " + e.getMessage(), e); //$NON-NLS-1$
+				Log.log(Level.FINEST,
+						"" + this + " PCSC Exception " + e.getMessage(), e); //$NON-NLS-1$
 				oldReaderState = null;
+				onException(e);
+				return false;
 			}
-			getCardReader().onException(e);
-			return false;
 		} catch (TimeoutException e) {
-			Log.log(Level.FINEST, "Timeout Exception", e); //$NON-NLS-1$ 
+			Log.log(Level.FINEST, "" + this + " Timeout Exception", e); //$NON-NLS-1$ 
 		}
 		return true;
 	}
 
-	protected void monitorLoop() throws PCSCException {
-		synchronized (lock) {
-			if (monitorThread == null) {
-				return;
-			}
-			pcscContext = getCardReader().getContext().establishContext();
-		}
+	protected void monitorLoop() {
 		try {
+			synchronized (lock) {
+				if (monitorThread == null) {
+					return;
+				}
+				pcscContext = getReader().getContext().establishContext();
+			}
 			while (true) {
 				if (!monitor()) {
 					break;
 				}
 			}
+		} catch (PCSCException e) {
+			Log.log(Level.WARNING, "" + this + " error monitoring status", e); //$NON-NLS-1$ //$NON-NLS-2$
 		} finally {
 			stop();
 		}
 	}
 
-	public void start() {
+	protected void onException(PCSCException e) {
+		List<IStatusListener> temp;
+		synchronized (lock) {
+			temp = new ArrayList<>(listeners);
+		}
+		for (IStatusListener listener : temp) {
+			listener.onException(getReader(), e);
+		}
+	}
+
+	protected void onStatusChange(PCSCCardReaderState cardReaderState) {
+		List<IStatusListener> temp;
+		synchronized (lock) {
+			temp = new ArrayList<>(listeners);
+		}
+		for (IStatusListener listener : temp) {
+			listener.onStatusChange(getReader(), cardReaderState);
+		}
+	}
+
+	public void removeStatusListener(IStatusListener listener) {
+		synchronized (lock) {
+			if (listeners.remove(listener)) {
+				if (listeners.isEmpty()) {
+					stop();
+				}
+			}
+		}
+	}
+
+	protected void start() {
 		synchronized (lock) {
 			if (monitorThread != null) {
 				return;
 			}
-			String name = "pcsc monitor " + getCardReader().getId();
+			String name = "pcsc monitor " + getReader().getId();
 			monitorThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					try {
-						monitorLoop();
-					} catch (PCSCException e) {
-						Log.log(Level.WARNING, "" + this + " error", e); //$NON-NLS-1$ //$NON-NLS-2$
-					}
+					monitorLoop();
 				}
 			}, name);
 			monitorThread.setDaemon(true);
@@ -167,13 +217,13 @@ public class PCSCStatusMonitor {
 			}
 			monitorThread = null;
 			temp = getPcscContext();
+			listeners.clear();
 		}
 		if (temp != null) {
 			try {
 				temp.dispose();
 			} catch (PCSCException e) {
-				Log.log(Level.WARNING,
-						"" + this + " error releasing status context"); //$NON-NLS-1$ //$NON-NLS-2$
+				Log.log(Level.WARNING, "" + this + " error releasing context"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
 		}
 	}

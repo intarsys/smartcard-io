@@ -46,6 +46,7 @@ import de.intarsys.security.smartcard.pcsc.IPCSCContext;
 import de.intarsys.security.smartcard.pcsc.PCSCCardReaderState;
 import de.intarsys.security.smartcard.pcsc.PCSCException;
 import de.intarsys.security.smartcard.pcsc.PCSCReset;
+import de.intarsys.security.smartcard.pcsc.PCSCStatusMonitor;
 import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
 import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 import de.intarsys.tools.event.INotificationSupport;
@@ -83,14 +84,17 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 		return cardState;
 	}
 
-	final private IPCSCCardReader.IStatusListener listenStatus = new IPCSCCardReader.IStatusListener() {
+	final private PCSCStatusMonitor monitor;
+
+	final private PCSCStatusMonitor.IStatusListener listenStatus = new PCSCStatusMonitor.IStatusListener() {
 		@Override
-		public void onException(PCSCException e) {
+		public void onException(IPCSCCardReader reader, PCSCException e) {
 			dispose();
 		}
 
 		@Override
-		public void onStatusChange(PCSCCardReaderState cardReaderState) {
+		public void onStatusChange(IPCSCCardReader reader,
+				PCSCCardReaderState cardReaderState) {
 			updateCardState(cardReaderState);
 		}
 	};
@@ -101,7 +105,10 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 			IPCSCCardReader pcscCardReader) throws CardException, PCSCException {
 		super(pcscCardReader.getId(), cardSystem);
 		this.pcscCardReader = pcscCardReader;
-		initialize();
+		PCSCCardReaderState initialState = getPcscCardReader().getState();
+		updateCardState(initialState);
+		monitor = new PCSCStatusMonitor(pcscCardReader);
+		monitor.addStatusListener(listenStatus);
 	}
 
 	@Override
@@ -163,7 +170,7 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 	@Override
 	protected void basicDispose() {
 		super.basicDispose();
-		getPcscCardReader().removeStatusListener(listenStatus);
+		monitor.removeStatusListener(listenStatus);
 	}
 
 	@Override
@@ -173,12 +180,6 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 
 	protected IPCSCCardReader getPcscCardReader() {
 		return pcscCardReader;
-	}
-
-	private void initialize() throws PCSCException {
-		PCSCCardReaderState initialState = getPcscCardReader().getState();
-		updateCardState(initialState);
-		getPcscCardReader().addStatusListener(listenStatus);
 	}
 
 	protected void updateCardState(PCSCCardReaderState newReaderState) {

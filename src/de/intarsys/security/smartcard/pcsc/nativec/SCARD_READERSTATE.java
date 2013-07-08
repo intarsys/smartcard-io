@@ -123,6 +123,10 @@ public class SCARD_READERSTATE extends NativeStaticStruct {
 		return META;
 	}
 
+	public String getReader() {
+		return ((NativeString) szReader.getValue(this)).stringValue();
+	}
+
 	public void setATR(byte[] newAtr) {
 		int length = newAtr.length;
 		if (length > 36) {

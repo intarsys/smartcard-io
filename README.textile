@@ -23,12 +23,66 @@ model (as we (1) didn't like the JNA provided one (2) have introduced a very sma
 for decoupling from JNA or any other implementation). Both libraries are included in the "lib" folder.
 The code for the intarsys native abstraction is BSD, available at Github, "intarsys/native-c".
 
-h2. Usage
+h2. Common Usage
 
 A pre-built jar file is available in the "deploy" folder. Together with the dependencies in "lib", add
 to the classpath for your project.
 
-More to be done...
+h2. PC/SC native usage
+
+On the most basic layer, we simply use a declarative approach to wrap PC/SC API functions. To work on this "abstraction" you can simply use *de.intarsys.security.smartcard.pcsc.nativec._PCSC*.
+
+If you create this without parameter, the default library for the platform will be used.
+
+h2. PC/SC abstraction usage
+
+There's a small abstract layer around *de.intarsys.security.smartcard.pcsc.nativec._PCSC* that allows for a little bit more readable code and also includes some indirections to ease life with 3rd part libraries and workarounds for them.
+
+In the "examples" directory you will find some demo code.
+
+The most simple use case is 
+
+bc. 
+IPCSCContext context = PCSCContextFactory.get().establishContext();
+List<IPCSCCardReader> readers = context.listReaders();
+if (readers.isEmpty()) {
+	System.out.println("no reader found");
+	return;
+}
+for (IPCSCCardReader reader : readers) {
+	PCSCStatusMonitor monitor = new PCSCStatusMonitor(reader);
+	monitor.addStatusListener(new IStatusListener() {
+		@Override
+		public void onException(PCSCException e) {
+			e.printStackTrace();
+		}
+		@Override
+		public void onStatusChange(PCSCCardReaderState cardReaderState) {
+			System.out.println("reader " + cardReaderState.getReader()
+					+ " state " + cardReaderState);
+		}
+	});
+}
+
+To  connect to a reader 
+
+bc. 
+// recommended use: create a new context for the connection
+System.out.println("" + reader + " establish context");
+IPCSCContext connectionContext = reader.getContext().establishContext();
+System.out.println("" + reader + " connect");
+IPCSCConnection connection = connectionContext.connect(
+		reader.getName(), _IPCSC.SCARD_SHARE_SHARED,
+		_IPCSC.SCARD_PROTOCOL_Tx);
+System.out.println("" + reader + " begin transaction");
+connection.beginTransaction();
+System.out.println("" + reader + " end transaction");
+connection.endTransaction(_IPCSC.SCARD_LEAVE_CARD);
+System.out.println("" + reader + " disconnect");
+connection.disconnect(_IPCSC.SCARD_LEAVE_CARD);
+System.out.println("" + reader + " dispose context");
+connectionContext.dispose();
+
 
 h2. License
 
@@ -66,7 +120,9 @@ bc.
 
 h2. Service & Support
 
-If you need further support, feel free to contact us.
+Service&support should be funneled through the tools available with Github.
+
+If you need further assistance, contact us.
 
 bc. 
 intarsys consulting GmbH
@@ -76,7 +132,3 @@ Fon +49 721 38479-0
 Fax +49 721 38479-60
 info@intarsys.de
 www.intarsys.de
-
-p. 
-For service and support contact <a href="mailto://support@intarsys.de">support@intarsys.de</a>
-

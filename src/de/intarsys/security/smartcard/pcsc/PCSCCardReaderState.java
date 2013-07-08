@@ -85,6 +85,13 @@ public class PCSCCardReaderState {
 		return readerState.getEventState();
 	}
 
+	public String getReader() {
+		if (readerState == null) {
+			return null;
+		}
+		return readerState.getReader();
+	}
+
 	public boolean isATRMatch() {
 		return (getEventState() & _IPCSC.SCARD_STATE_ATRMATCH) != 0;
 	}

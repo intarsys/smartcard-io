@@ -29,6 +29,7 @@
  */
 package de.intarsys.security.smartcard.pcsc;
 
+
 /**
  * The iconified PC/SC card reader terminal.
  * 
@@ -36,20 +37,6 @@ package de.intarsys.security.smartcard.pcsc;
  * 
  */
 public interface IPCSCCardReader {
-
-	public interface IStatusListener {
-
-		public void onException(PCSCException e);
-
-		public void onStatusChange(PCSCCardReaderState cardReaderState);
-	}
-
-	/**
-	 * Add a listener for the card reader status changes.
-	 * 
-	 * @param listener
-	 */
-	public void addStatusListener(IStatusListener listener);
 
 	/**
 	 * The {@link IPCSCContext} that created this reader.
@@ -79,13 +66,5 @@ public interface IPCSCCardReader {
 	 * @throws PCSCException
 	 */
 	public PCSCCardReaderState getState() throws PCSCException;
-
-	/**
-	 * Remove a previously registered listener for the card reader status
-	 * changes.
-	 * 
-	 * @param listener
-	 */
-	public void removeStatusListener(IStatusListener listener);
 
 }
