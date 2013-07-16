@@ -49,7 +49,6 @@ import de.intarsys.security.smartcard.pcsc.nativec._PCSC_RETURN_CODES;
 public class PCSCStatusMonitor {
 
 	public interface IStatusListener {
-
 		public void onException(IPCSCCardReader reader, PCSCException e);
 
 		public void onStatusChange(IPCSCCardReader reader,

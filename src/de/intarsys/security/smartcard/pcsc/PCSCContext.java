@@ -125,7 +125,7 @@ public class PCSCContext extends CommonPCSCContext {
 		INativeHandle protocolHandle = getProtocolHandle(activeProtocol
 				.intValue());
 		return new PCSCConnection(this, new SCARDHANDLE(phCard.longValue()),
-				shareMode, protocol, protocolHandle);
+				shareMode, activeProtocol.intValue(), protocolHandle);
 	}
 
 	@Override

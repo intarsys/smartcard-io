@@ -41,7 +41,7 @@ import de.intarsys.tools.event.INotificationListener;
 import de.intarsys.tools.message.MessageBundle;
 
 /**
- * A {@link CardSystemMonitor} that connects to an {@link ICard} card detection.
+ * A {@link CardSystemMonitor} that connects to an {@link ICard} upon detection.
  * 
  */
 public class ActiveCardConnectionMonitor extends CardConnectionMonitor {
@@ -148,8 +148,7 @@ public class ActiveCardConnectionMonitor extends CardConnectionMonitor {
 	protected void onCardTerminalConnected(ICardTerminal terminal) {
 		super.onCardTerminalConnected(terminal);
 		synchronized (lock) {
-			if (activeCardTerminal == null
-					|| activeCardTerminal == NoCardTerminal) {
+			if (activeCardTerminal == null) {
 				// auto select first terminal presented
 				select(terminal);
 			}

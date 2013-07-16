@@ -29,7 +29,9 @@
  */
 package de.intarsys.security.smartcard.card;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
@@ -39,7 +41,7 @@ import de.intarsys.tools.concurrent.AbstractFutureTask;
  * Tool methods for handling the {@link ICard} subsystem
  * 
  */
-public class CardTools {
+final public class CardTools {
 
 	static class ConnectTransactedTask extends
 			AbstractFutureTask<ICardConnection> {
@@ -156,6 +158,7 @@ public class CardTools {
 		private void startCardConnectTask() {
 			cardConnectTask = getCard()
 					.connectShared(
+							ICardTerminal.PROTOCOL_Tx,
 							new de.intarsys.security.smartcard.card.IConnectionCallback() {
 								@Override
 								public void connected(
@@ -221,6 +224,27 @@ public class CardTools {
 	}
 
 	/**
+	 * Open a transaction on an {@link ICardConnection}.
+	 * 
+	 * @param connection
+	 * @param millisecTimeout
+	 * @return
+	 * @throws CardException
+	 * @throws TimeoutException
+	 * @throws InterruptedException
+	 */
+	static public void beginTransaction(ICardConnection connection,
+			int millisecTimeout) throws CardException, TimeoutException,
+			InterruptedException {
+		Future f = connection.beginTransaction(null);
+		try {
+			f.get(millisecTimeout, TimeUnit.MILLISECONDS);
+		} catch (ExecutionException e) {
+			throw new CardException("connection attempt failed", e.getCause());
+		}
+	}
+
+	/**
 	 * Create an {@link ICardConnection}.
 	 * 
 	 * @param card
@@ -229,7 +253,7 @@ public class CardTools {
 	 */
 	static public Future<ICardConnection> connectShared(ICard card,
 			final IConnectionCallback callback) {
-		return card.connectShared(callback);
+		return card.connectShared(ICardTerminal.PROTOCOL_Tx, callback);
 	}
 
 	/**
@@ -244,7 +268,13 @@ public class CardTools {
 	 */
 	static public ICardConnection connectShared(ICard card, int millisecTimeout)
 			throws CardException, TimeoutException, InterruptedException {
-		return card.connectShared(millisecTimeout);
+		Future<ICardConnection> f = card.connectShared(
+				ICardTerminal.PROTOCOL_Tx, null);
+		try {
+			return f.get(millisecTimeout, TimeUnit.MILLISECONDS);
+		} catch (ExecutionException e) {
+			throw new CardException("connection attempt failed", e.getCause());
+		}
 	}
 
 	/**
@@ -277,23 +307,24 @@ public class CardTools {
 	static public ICardConnection connectTransacted(ICard card,
 			int millisecTimeout) throws CardException, TimeoutException,
 			InterruptedException {
-		ICardConnection cardChannel = card.connectShared(millisecTimeout);
+		ICardConnection connection = CardTools.connectShared(card,
+				millisecTimeout);
 		try {
-			cardChannel.beginTransaction(millisecTimeout);
-			return cardChannel;
-		} catch (CardException e) {
-			cardChannel.close(ICardConnection.MODE_LEAVE_CARD);
-			throw e;
+			CardTools.beginTransaction(connection, millisecTimeout);
+			return connection;
 		} catch (TimeoutException e) {
-			cardChannel.close(ICardConnection.MODE_LEAVE_CARD);
+			connection.close(ICardConnection.MODE_LEAVE_CARD);
 			throw e;
 		} catch (InterruptedException e) {
-			cardChannel.close(ICardConnection.MODE_LEAVE_CARD);
+			connection.close(ICardConnection.MODE_LEAVE_CARD);
 			throw e;
 		} catch (RuntimeException e) {
-			cardChannel.close(ICardConnection.MODE_LEAVE_CARD);
+			connection.close(ICardConnection.MODE_LEAVE_CARD);
 			throw e;
 		}
+	}
+
+	private CardTools() {
 	}
 
 }

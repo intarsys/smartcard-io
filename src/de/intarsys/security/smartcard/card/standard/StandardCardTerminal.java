@@ -58,6 +58,8 @@ import de.intarsys.tools.event.INotificationSupport;
  * The standard implementation maps directly to the native PCSC API. The initial
  * {@link IPCSCContext} is defined by the {@link IPCSCCardReader} instance.
  * 
+ * Monitoring the card reader is started immediately in a thread of its own.
+ * 
  * Upon connecting, this implementation will create a new {@link IPCSCContext}
  * AND a {@link IPCSCConnection}. This is done for maximum decoupling and PCSC
  * platform and version independence (some platforms may serialize requests to
@@ -131,13 +133,14 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 	}
 
 	protected StandardCardConnection basicConnectExclusive(StandardCard card,
-			int id, ScheduledExecutorService executor) throws CardException {
+			int id, int protocol, ScheduledExecutorService executor)
+			throws CardException {
 		try {
 			IPCSCContext context = getPcscCardReader().getContext()
 					.establishContext();
 			IPCSCConnection pcscConnection = context.connect(
 					getPcscCardReader().getName(),
-					_IPCSC.SCARD_SHARE_EXCLUSIVE, _IPCSC.SCARD_PROTOCOL_Tx);
+					_IPCSC.SCARD_SHARE_EXCLUSIVE, protocol);
 			return new StandardCardConnection(card, id, executor, true,
 					pcscConnection);
 		} catch (PCSCReset e) {
@@ -148,13 +151,14 @@ public class StandardCardTerminal extends CommonCardTerminal implements
 	}
 
 	protected StandardCardConnection basicConnectShared(StandardCard card,
-			int id, ScheduledExecutorService executor) throws CardException {
+			int id, int protocol, ScheduledExecutorService executor)
+			throws CardException {
 		try {
 			IPCSCContext context = getPcscCardReader().getContext()
 					.establishContext();
 			IPCSCConnection pcscConnection = context.connect(
 					getPcscCardReader().getName(), _IPCSC.SCARD_SHARE_SHARED,
-					_IPCSC.SCARD_PROTOCOL_Tx);
+					protocol);
 			return new StandardCardConnection(card, id, executor, false,
 					pcscConnection);
 		} catch (PCSCReset e) {

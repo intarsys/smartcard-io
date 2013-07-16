@@ -30,45 +30,36 @@
 package de.intarsys.security.smartcard.card;
 
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import de.intarsys.tools.attribute.IAttributeSupport;
 
 /**
- * The abstraction of a smartcard inserted in a {@link ICardTerminal}. A
- * {@link ICard} can be achieved by calling {@link ICardTerminal.getCard()}
+ * The abstraction of a smartcard inserted in an {@link ICardTerminal}. An
+ * {@link ICard} can be achieved by calling {@link ICardTerminal.getCard()} if
+ * present.
  * 
+ * Ensure thread safe implementation for {@link IAttributeSupport}!
  */
 public interface ICard extends IAttributeSupport {
 
 	/**
 	 * Connect to the card exclusive.
+	 * @param protocol TODO
 	 * 
 	 * @return A {@link ICardConnection}
 	 */
-	public ICardConnection connectExclusive() throws CardException;
+	public ICardConnection connectExclusive(int protocol) throws CardException;
 
 	/**
 	 * Connect to the card asynchronously.
-	 * 
+	 * @param protocol TODO
 	 * @param connectionCallback
 	 *            The callback to be executed upon termination of the operation.
+	 * 
 	 * @return A Future<ICardChannel> giving access to the ongoing operation.
 	 */
 	public Future<ICardConnection> connectShared(
-			IConnectionCallback connectionCallback);
-
-	/**
-	 * Connect to the card synchronously using a timeout.
-	 * 
-	 * @param millisecTimeout
-	 * @return The {@link ICardConnection} established.
-	 * @throws CardException
-	 * @throws TimeoutException
-	 * @throws InterruptedException
-	 */
-	public ICardConnection connectShared(int millisecTimeout)
-			throws CardException, TimeoutException, InterruptedException;
+			int protocol, IConnectionCallback connectionCallback);
 
 	/**
 	 * The {@link ATR} identifying the {@link ICard}.
@@ -92,7 +83,7 @@ public interface ICard extends IAttributeSupport {
 	public EnumCardState getState();
 
 	/**
-	 * true if this card is "attached" via contacless reader.
+	 * true if this card is "attached" via contactless reader.
 	 * 
 	 * @return
 	 */

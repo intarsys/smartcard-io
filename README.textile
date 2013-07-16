@@ -83,6 +83,33 @@ connection.disconnect(_IPCSC.SCARD_LEAVE_CARD);
 System.out.println("" + reader + " dispose context");
 connectionContext.dispose();
 
+h2. javax.smartcardio Provider
+
+The library comes with an alternative javax.smartcardio provider. There are a couple of things to consider:
+
+* Intended differences
+** dedicated PCSC context for terminals, terminal and card
+** waitForChange(timeout) semantics improved(?), state change is reset even in case of timeout
+** reader insertion is handled, too
+** no finalizer for card!
+
+* Open design questions
+** "exclusive" card access is NOT restricted to a Java thread. I found no technical reason for this constraint. In imho this makes handling of shared and pooled resources ugly. Next to "1 PSCS context" this would be my top level reason *not* to use smartcardio. Any opinions?
+** "connect" always returns the identical {@link Card} object. This is why? This implementation currently opens a new shared connection. If we revert to the spec, i'd at least expect some kind of reference counting. Opinions?
+
+* Todos
+** no channel support yet
+** implement "GET RESPONSE"
+** no permission checks so far
+** review exceptions to be standard compliant (IllegalStateException)
+
+The provider is implemented in _de.intarsys.security.smartcard.smartcardio.SmartcardioProvider_, so programmatically you can active it with this code
+
+bc. 
+// add provider and ensure that it will be used first...
+Security.insertProviderAt(new SmartcardioProvider(), 1);
+
+There are a couple of simple examples for use with smartcardio included.
 
 h2. License
 

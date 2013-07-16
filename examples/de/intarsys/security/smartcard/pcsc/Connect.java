@@ -64,7 +64,7 @@ public class Connect {
 				}
 			});
 		}
-		while (System.in.read() != '\n') {
+		while (System.in.available() == 0) {
 			Thread.sleep(100);
 		}
 		context.dispose();

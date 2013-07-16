@@ -29,6 +29,7 @@
  */
 package de.intarsys.security.smartcard.card;
 
+import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
 import de.intarsys.tools.attribute.IAttributeSupport;
 import de.intarsys.tools.event.INotificationSupport;
 
@@ -37,17 +38,27 @@ import de.intarsys.tools.event.INotificationSupport;
  * connected to the system.
  * <p>
  * {@link ICardTerminal} monitors the state of the associated terminal / token
- * in a thread of its own as long as connected. In this thread the PCSC
- * GetStatusChange is performed as well as the Connect and BeginTransaction
- * operations.
+ * in a thread of its own as long as connected.
  * <p>
  * {@link ICardTerminal} is used in a multithreaded environment and its state is
  * accessed by either its monitoring thread or the client code .
+ * 
+ * Ensure thread safe implementation for {@link IAttributeSupport}!
  */
 public interface ICardTerminal extends INotificationSupport, IAttributeSupport {
 
+	public static final int PROTOCOL_RAW = _IPCSC.SCARD_PROTOCOL_RAW;
+	public static final int PROTOCOL_T0 = _IPCSC.SCARD_PROTOCOL_T0;
+	public static final int PROTOCOL_T1 = _IPCSC.SCARD_PROTOCOL_T1;
+	public static final int PROTOCOL_Tx = _IPCSC.SCARD_PROTOCOL_Tx;
+
 	public abstract void addSecondaryResourceFinalizer(Runnable runnable);
 
+	/**
+	 * Connect to the card terminal directly.
+	 * 
+	 * @return A {@link ICardConnection}
+	 */
 	public abstract ICardConnection connectDirect() throws CardException;
 
 	/**

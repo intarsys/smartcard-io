@@ -207,13 +207,15 @@ abstract public class CommonCardSystem implements ICardSystem {
 
 	protected void updateCardTerminals() {
 		try {
+			Map<String, ICardTerminal> oldTerminals;
+			Map<String, ICardTerminal> newTerminals;
 			synchronized (lock) {
 				if (disposed) {
 					return;
 				}
-				Map<String, ICardTerminal> oldTerminals = new HashMap<String, ICardTerminal>(
+				oldTerminals = new HashMap<String, ICardTerminal>(
 						cardTerminalMap);
-				Map<String, ICardTerminal> newTerminals = new HashMap<String, ICardTerminal>();
+				newTerminals = new HashMap<String, ICardTerminal>();
 				//
 				updateCardTerminals(oldTerminals, newTerminals);
 				//
@@ -233,10 +235,13 @@ abstract public class CommonCardSystem implements ICardSystem {
 								""		+ this + " remove terminal " + terminal.getName()); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 					cardTerminalMap.remove(terminal.getName());
-					terminal.dispose();
 					triggerEvent(new AttributeChangedEvent(this,
 							ICardSystem.ATTR_CARD_TERMINALS, terminal, null));
 				}
+			}
+			for (ICardTerminal terminal : oldTerminals.values()) {
+				// do not hold lock when calling dispose
+				terminal.dispose();
 			}
 			// events are queued to ensure sequence and lock free execution
 			flushEvents();
@@ -247,6 +252,17 @@ abstract public class CommonCardSystem implements ICardSystem {
 		}
 	}
 
+	/**
+	 * Prepare the collections of old and new terminals.
+	 * 
+	 * Upon call, oldTerminals holds the collection of previously known
+	 * terminals. newTerminals hold an empty collection. When returning,
+	 * newTerminals holds all available terminals that are not known previously,
+	 * oldTerminals holds all terminals no longer available.
+	 * 
+	 * @param oldTerminals
+	 * @param newTerminals
+	 */
 	protected void updateCardTerminals(Map<String, ICardTerminal> oldTerminals,
 			Map<String, ICardTerminal> newTerminals) {
 	}

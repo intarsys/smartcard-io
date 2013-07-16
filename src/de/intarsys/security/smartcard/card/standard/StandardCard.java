@@ -57,16 +57,18 @@ public class StandardCard extends CommonCard {
 	}
 
 	@Override
-	protected CommonCardConnection basicConnectExclusive(int id,
+	protected CommonCardConnection basicConnectExclusive(int id, int protocol,
 			ScheduledExecutorService executor) throws CardException {
-		return basicGetCardTerminal().basicConnectExclusive(this, id, executor);
+		return basicGetCardTerminal().basicConnectExclusive(this, id, protocol,
+				executor);
 	}
 
 	@Override
-	protected CommonCardConnection basicConnectShared(int id,
+	protected CommonCardConnection basicConnectShared(int id, int protocol,
 			ScheduledExecutorService executor)
 			throws CardSharingViolationException, CardException {
-		return basicGetCardTerminal().basicConnectShared(this, id, executor);
+		return basicGetCardTerminal().basicConnectShared(this, id, protocol,
+				executor);
 	}
 
 	@Override

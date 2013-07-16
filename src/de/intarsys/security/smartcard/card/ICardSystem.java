@@ -57,7 +57,8 @@ public interface ICardSystem extends INotificationSupport {
 	public void dispose();
 
 	/**
-	 * The card terminal with the requested name.
+	 * The card terminal with the requested name. The {@link ICardTerminal}
+	 * instances preserve identity.
 	 * 
 	 * @param name
 	 * @return The card terminal with the requested name.
@@ -65,7 +66,8 @@ public interface ICardSystem extends INotificationSupport {
 	public ICardTerminal getCardTerminal(String name);
 
 	/**
-	 * The {@link ICardTerminal} instances currently available.
+	 * The {@link ICardTerminal} instances currently available. The
+	 * {@link ICardTerminal} instances preserve identity.
 	 * 
 	 * @return The {@link ICardTerminal} instances currently available.
 	 */

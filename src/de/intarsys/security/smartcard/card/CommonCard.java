@@ -29,11 +29,9 @@
  */
 package de.intarsys.security.smartcard.card;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,9 +53,12 @@ abstract public class CommonCard implements ICard {
 
 		private final int id;
 
-		protected ConnectTask(int id, ScheduledExecutorService executor,
-				IConnectionCallback callback) {
+		private final int protocol;
+
+		protected ConnectTask(int id, int protocol,
+				ScheduledExecutorService executor, IConnectionCallback callback) {
 			this.id = id;
+			this.protocol = protocol;
 			this.executor = executor;
 			this.callback = callback;
 		}
@@ -70,7 +71,8 @@ abstract public class CommonCard implements ICard {
 			if (Log.isLoggable(Level.FINEST)) {
 				Log.finest("" + this + " connect shared"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
-			CommonCardConnection newChannel = basicConnectShared(id, executor);
+			CommonCardConnection newChannel = basicConnectShared(id, protocol,
+					executor);
 			if (Log.isLoggable(Level.FINEST)) {
 				Log.finest("" + this + " connected"); //$NON-NLS-1$ //$NON-NLS-2$
 			}
@@ -153,10 +155,11 @@ abstract public class CommonCard implements ICard {
 	}
 
 	abstract protected CommonCardConnection basicConnectExclusive(int id,
-			ScheduledExecutorService executor) throws CardException;
+			int protocol, ScheduledExecutorService executor)
+			throws CardException;
 
 	abstract protected CommonCardConnection basicConnectShared(int id,
-			ScheduledExecutorService executor)
+			int protocol, ScheduledExecutorService executor)
 			throws CardSharingViolationException, CardException;
 
 	protected CommonCardTerminal basicGetCardTerminal() {
@@ -184,44 +187,26 @@ abstract public class CommonCard implements ICard {
 	}
 
 	@Override
-	final public ICardConnection connectExclusive() throws CardException {
+	final public ICardConnection connectExclusive(int protocol)
+			throws CardException {
 		synchronized (lock) {
 			checkValidity();
 		}
 		int id = CommonCardConnection.createId();
-		CommonCardConnection connection = basicConnectExclusive(id,
+		CommonCardConnection connection = basicConnectExclusive(id, protocol,
 				createExecutor(id));
 		return connection;
 	}
 
 	@Override
-	final public ConnectTask connectShared(final IConnectionCallback callback) {
+	final public ConnectTask connectShared(int protocol,
+			final IConnectionCallback callback) {
 		int id = CommonCardConnection.createId();
 		ScheduledExecutorService executor = createExecutor(id);
-		ConnectTask connectTask = new ConnectTask(id, executor, callback);
+		ConnectTask connectTask = new ConnectTask(id, protocol, executor,
+				callback);
 		executor.execute(connectTask);
 		return connectTask;
-	}
-
-	@Override
-	final public ICardConnection connectShared(int millisecTimeout)
-			throws CardException, TimeoutException, InterruptedException {
-		ConnectTask connectTask = connectShared(null);
-		try {
-			return connectTask.get(millisecTimeout, TimeUnit.MILLISECONDS);
-		} catch (ExecutionException e) {
-			Throwable cause = e.getCause();
-			if (cause instanceof CardException) {
-				throw (CardException) cause;
-			}
-			throw new CardException("unexpected exception", e); //$NON-NLS-1$
-		} catch (TimeoutException e) {
-			cancelConnectTask(connectTask);
-			throw e;
-		} catch (InterruptedException e) {
-			cancelConnectTask(connectTask);
-			throw e;
-		}
 	}
 
 	protected ScheduledExecutorService createExecutor(int id) {

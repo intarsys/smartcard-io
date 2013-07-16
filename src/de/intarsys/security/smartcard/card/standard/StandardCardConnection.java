@@ -212,4 +212,13 @@ public class StandardCardConnection extends CommonCardConnection {
 			throw new CardException(e.getLocalizedMessage(), e);
 		}
 	}
+
+	public IPCSCConnection getPcscConnection() {
+		return pcscConnection;
+	}
+
+	@Override
+	public int getProtocol() {
+		return pcscConnection.getProtocol();
+	}
 }

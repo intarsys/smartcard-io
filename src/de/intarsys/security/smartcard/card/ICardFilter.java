@@ -30,7 +30,7 @@
 package de.intarsys.security.smartcard.card;
 
 /**
- * A filter in {@link ICard} instances.
+ * A filter for {@link ICard} instances.
  * 
  */
 public interface ICardFilter {

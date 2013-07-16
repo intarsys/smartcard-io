@@ -1,0 +1,5 @@
+de.intarsys.security.smartcard.card
+de.intarsys.security.smartcard.card.standard
+de.intarsys.security.smartcard.pcsc
+de.intarsys.security.smartcard.pcsc.nativec
+de.intarsys.security.smartcard.smartcardio

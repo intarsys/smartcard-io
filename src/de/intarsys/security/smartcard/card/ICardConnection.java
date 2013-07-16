@@ -30,15 +30,14 @@
 package de.intarsys.security.smartcard.card;
 
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import de.intarsys.security.smartcard.pcsc.nativec._IPCSC;
 import de.intarsys.tools.attribute.IAttributeSupport;
 
 /**
- * The abstraction of a channel or connection opened to a {@link ICard}. A
+ * The abstraction of a connection opened to an {@link ICard}. An
  * {@link ICardConnection} can be achieved by calling some of the "connect.."
- * methods in {@link ICard}.
+ * methods in {@link ICard} or {@link ICardTerminal}.
  * 
  */
 public interface ICardConnection extends ICardTransmitter, IAttributeSupport {
@@ -47,16 +46,6 @@ public interface ICardConnection extends ICardTransmitter, IAttributeSupport {
 	public static final int MODE_RESET = _IPCSC.SCARD_RESET_CARD;
 	public static final int MODE_UNPOWER = _IPCSC.SCARD_UNPOWER_CARD;
 	public static final int MODE_EJECT = _IPCSC.SCARD_EJECT_CARD;
-
-	/**
-	 * Open a transaction synchronously using a timeout.
-	 * 
-	 * @param millisecTimeout
-	 * @throws CardException
-	 * @throws TimeoutException
-	 */
-	public void beginTransaction(int millisecTimeout) throws TimeoutException,
-			CardException, InterruptedException;
 
 	/**
 	 * Open an transaction asynchronously.
@@ -145,7 +134,14 @@ public interface ICardConnection extends ICardTransmitter, IAttributeSupport {
 	public ICardTerminal getCardTerminal();
 
 	/**
-	 * Experimental - access PCSC State
+	 * The active protocol.
+	 * 
+	 * @return
+	 */
+	public int getProtocol();
+
+	/**
+	 * Experimental - access PCSC State. This is used for keep-alive only...
 	 * 
 	 */
 	public void getStatus() throws CardException;

@@ -32,7 +32,6 @@ package de.intarsys.security.smartcard.card;
 import java.util.logging.Logger;
 
 import de.intarsys.security.smartcard.card.standard.StandardCardSystem;
-import de.intarsys.security.smartcard.pcsc.PCSCException;
 import de.intarsys.security.smartcard.pcsc.PCSCContextFactory;
 
 /**
@@ -48,11 +47,7 @@ public class CardSystem {
 	private static ICardSystem ACTIVE;
 
 	static protected StandardCardSystem createCardSystem() {
-		try {
-			return new StandardCardSystem(PCSCContextFactory.get());
-		} catch (PCSCException e) {
-			return StandardCardSystem.DISABLED;
-		}
+		return new StandardCardSystem(PCSCContextFactory.get());
 	}
 
 	static public void dispose() {

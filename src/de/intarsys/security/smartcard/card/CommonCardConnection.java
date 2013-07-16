@@ -29,12 +29,10 @@
  */
 package de.intarsys.security.smartcard.card;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -263,27 +261,6 @@ abstract public class CommonCardConnection implements ICardConnection {
 
 	abstract protected ResponseAPDU basicTransmit(RequestAPDU request)
 			throws CardException;
-
-	@Override
-	public void beginTransaction(int millisecTimeout) throws TimeoutException,
-			CardException, InterruptedException {
-		Future<Void> transactionTask = beginTransaction(null);
-		try {
-			transactionTask.get(millisecTimeout, TimeUnit.MILLISECONDS);
-		} catch (ExecutionException e) {
-			Throwable cause = e.getCause();
-			if (cause instanceof CardException) {
-				throw (CardException) cause;
-			}
-			throw new CardException("unexpected exception", e); //$NON-NLS-1$
-		} catch (TimeoutException e) {
-			cancelTransactionTask(transactionTask);
-			throw e;
-		} catch (InterruptedException e) {
-			cancelTransactionTask(transactionTask);
-			throw e;
-		}
-	}
 
 	@Override
 	public Future<Void> beginTransaction(final ITransactionCallback callback) {
