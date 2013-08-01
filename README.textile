@@ -94,8 +94,8 @@ The library comes with an alternative javax.smartcardio provider. There are a co
 ** no finalizer for card!
 
 * Open design questions
-** "exclusive" card access is NOT restricted to a Java thread. I found no technical reason for this constraint. In imho this makes handling of shared and pooled resources ugly. Next to "1 PSCS context" this would be my top level reason *not* to use smartcardio. Any opinions?
-** "connect" always returns the identical {@link Card} object. This is why? This implementation currently opens a new shared connection. If we revert to the spec, i'd at least expect some kind of reference counting. Opinions?
+** "exclusive" card access is NOT restricted to a Java thread. I found no technical reason for this constraint. In imho this makes handling of shared and pooled resources ugly. Next to "1 PCSC context" this would be my top level reason *not* to use smartcardio. Any opinions?
+** "connect" always returns the identical {@link Card} object. Why is this? This implementation currently opens a new shared connection. If we revert to the spec, I'd at least expect some kind of reference counting. Opinions?
 
 * Todos
 ** no channel support yet
@@ -143,11 +143,10 @@ bc.
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-</pre>
 
 h2. Service & Support
 
-Service&support should be funneled through the tools available with Github.
+Service & support should be funneled through the tools available with Github.
 
 If you need further assistance, contact us.
 
