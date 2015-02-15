@@ -45,9 +45,44 @@ public class PCSCException extends Exception implements _PCSC_RETURN_CODES {
 
 	public final static MessageBundle Msg = PACKAGE.Messages;
 
+	public static void checkReturnCode(int rc) throws PCSCException {
+		if (rc == SCARD_S_SUCCESS) {
+			return;
+		}
+		if (rc == _PCSC_RETURN_CODES.SCARD_W_RESET_CARD) {
+			if (PCSCTools.Log.isLoggable(Level.FINEST)) {
+				PCSCTools.Log.info("card was reset"); //$NON-NLS-1$
+			}
+			throw new PCSCReset();
+		}
+		if (rc == _PCSC_RETURN_CODES.SCARD_W_REMOVED_CARD
+				|| rc == _PCSC_RETURN_CODES.SCARD_W_UNPOWERED_CARD
+				|| rc == _PCSC_RETURN_CODES.SCARD_W_UNRESPONSIVE_CARD
+				|| rc == _PCSC_RETURN_CODES.SCARD_W_UNSUPPORTED_CARD
+				|| rc == _PCSC_RETURN_CODES.SCARD_E_CARD_UNSUPPORTED
+				|| rc == _PCSC_RETURN_CODES.SCARD_E_NO_SMARTCARD) {
+			throw new PCSCCardUnavailable(rc);
+		}
+		throw new PCSCException(rc);
+	}
+
+	public static void checkReturnCode(int rc, int size) throws PCSCException {
+		if (rc == _PCSC_RETURN_CODES.ERROR_INSUFFICIENT_BUFFER
+				|| rc == _PCSC_RETURN_CODES.SCARD_E_INSUFFICIENT_BUFFER) {
+			throw new PCSCException(rc, ": at least " + size //$NON-NLS-1$
+					+ " bytes required"); //$NON-NLS-1$
+		}
+		checkReturnCode(rc);
+	}
+
 	private int errorCode = 0;
 
 	public PCSCException(int errorCode) {
+		this.errorCode = errorCode;
+	}
+
+	public PCSCException(int errorCode, String message) {
+		super(message);
 		this.errorCode = errorCode;
 	}
 
@@ -91,18 +126,5 @@ public class PCSCException extends Exception implements _PCSC_RETURN_CODES {
 			}
 		}
 		return Msg.getString("PCSCException.error.default", errorCode); //$NON-NLS-1$
-	}
-
-	public static void checkReturnCode(int rc) throws PCSCException {
-		if (rc == SCARD_S_SUCCESS) {
-			return;
-		}
-		if (rc == _PCSC_RETURN_CODES.SCARD_W_RESET_CARD) {
-			if (PCSCTools.Log.isLoggable(Level.FINEST)) {
-				PCSCTools.Log.info("card was reset"); //$NON-NLS-1$ 
-			}
-			throw new PCSCReset();
-		}
-		throw new PCSCException(rc);
 	}
 }

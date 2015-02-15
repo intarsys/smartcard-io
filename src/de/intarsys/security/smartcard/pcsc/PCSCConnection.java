@@ -97,20 +97,26 @@ public class PCSCConnection implements IPCSCConnection {
 			int inBufferLength, int outBufferSize) throws PCSCException {
 		logBytes("control 0x" + Integer.toHexString(controlCode) + " request", //$NON-NLS-1$ //$NON-NLS-2$
 				inBuffer, inBufferOffset, inBufferLength, false);
-		NativeBuffer nInBuffer = null;
 		if (inBuffer != null) {
-			nInBuffer = new NativeBuffer(inBufferLength);
-			nInBuffer.setByteArray(0, inBuffer, inBufferOffset, inBufferLength);
+			if (sendBuffer == null || sendBuffer.getSize() < inBufferLength) {
+				int tempLength = Math.max(inBufferLength, 512);
+				sendBuffer = new NativeBuffer(tempLength);
+			}
+			sendBuffer
+					.setByteArray(0, inBuffer, inBufferOffset, inBufferLength);
 		}
-		NativeBuffer outBuffer = new NativeBuffer(outBufferSize);
-		NativePcscDword bytesReturned = new NativePcscDword();
-
+		if (recvBuffer == null || recvBuffer.getSize() < outBufferSize) {
+			int tempLength = Math.max(outBufferSize, 4096);
+			recvBuffer = new NativeBuffer(tempLength);
+			nRecvLength = new NativePcscDword();
+		}
+		nRecvLength.setValue(outBufferSize);
 		int rc = getContext().getPcsc().SCardControl(hCard, controlCode,
-				nInBuffer, inBufferLength, outBuffer, outBuffer.getSize(),
-				bytesReturned);
-		PCSCException.checkReturnCode(rc);
-		int size = bytesReturned.intValue();
-		byte[] result = outBuffer.getByteArray(0, size);
+				sendBuffer, inBufferLength, recvBuffer, recvBuffer.getSize(),
+				nRecvLength);
+		int size = nRecvLength.intValue();
+		PCSCException.checkReturnCode(rc, size);
+		byte[] result = recvBuffer.getByteArray(0, size);
 		logBytes("control 0x" + Integer.toHexString(controlCode) + " response", //$NON-NLS-1$ //$NON-NLS-2$
 				result, 0, result.length, false);
 		return result;
