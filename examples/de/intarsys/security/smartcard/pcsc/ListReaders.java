@@ -2,6 +2,10 @@ package de.intarsys.security.smartcard.pcsc;
 
 import java.util.List;
 
+import de.intarsys.security.smartcard.pcsc.IPCSCCardReader;
+import de.intarsys.security.smartcard.pcsc.IPCSCContext;
+import de.intarsys.security.smartcard.pcsc.PCSCContextFactory;
+
 public class ListReaders {
 
 	public static void main(String[] args) {
