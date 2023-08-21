@@ -1,0 +1,37 @@
+subprojects {
+
+	pluginManager.withPlugin('java') {
+		sourceSets.main.resources.srcDirs += 'src/main/java'
+		sourceSets.test.resources.srcDirs += 'src/test/java'
+
+		java {
+			toolchain {
+				languageVersion.set(JavaLanguageVersion.of(17))
+			}
+			withSourcesJar()
+			withJavadocJar()
+		}
+		sourcesJar {
+			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+		}
+		javadoc {
+			options.showFromPublic()
+			options.addBooleanOption("Xdoclint:-missing", true)
+		}
+
+		jar {
+			manifest {
+				attributes([
+					'Implementation-Title': project.name,
+					'Implementation-Version': project.version,
+					'Implementation-Vendor': 'intarsys GmbH',
+					'Created-By': "Gradle ${gradle.gradleVersion}"
+				])
+			}
+		}
+	}
+
+	project.tasks.withType(GenerateModuleMetadata) {
+		enabled = false
+	}
+}

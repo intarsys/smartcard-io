@@ -1,0 +1,5 @@
+rootProject.name = 'is-lib-security-smartcard-io'
+
+include 'intarsys-security-smartcard-io'
+
+apply from: 'dependencies.gradle'

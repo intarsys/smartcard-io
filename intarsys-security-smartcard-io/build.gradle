@@ -1,0 +1,26 @@
+plugins {
+	id 'java-library'
+	id 'eclipse-wtp'
+}
+
+configurations {
+	examplesImplementation.extendsFrom implementation
+}
+
+sourceSets {
+	examples {
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+dependencies {
+
+	implementation libs.jakartaAnnotationApi
+
+	implementation libs.intarsysNativecGeneric
+	api libs.intarsysToolsRuntime
+
+	examplesRuntimeOnly libs.logbackClassic
+	examplesRuntimeOnly libs.intarsysNativecJna
+}

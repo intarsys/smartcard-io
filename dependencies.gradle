@@ -1,0 +1,20 @@
+dependencyResolutionManagement {
+	versionCatalogs {
+		libs {
+			// is-lib-runtime
+			library('intarsysToolsRuntime', 'de.intarsys.runtime:intarsys-tools-runtime:4.25.2')
+
+			// is-lib-nativec
+			version('is-nativec', '5.14.1')
+			library('intarsysNativecGeneric', 'de.intarsys.nativec', 'intarsys-nativec-generic').versionRef('is-nativec')
+			library('intarsysNativecJna', 'de.intarsys.nativec', 'intarsys-nativec-jna').versionRef('is-nativec')
+
+			// Common Java APIs
+			library('jakartaAnnotationApi', 'jakarta.annotation:jakarta.annotation-api:1.3.5')
+
+			// Logging
+			library('slf4jApi','org.slf4j:slf4j-api:1.7.36')
+			library('logbackClassic', 'ch.qos.logback:logback-classic:1.2.11')
+		}
+	}
+}
